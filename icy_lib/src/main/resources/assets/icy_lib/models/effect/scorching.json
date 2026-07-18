@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:particle",
+  "textures": {
+    "particle": "icy_lib:effect/scorching"
+  }
+}
