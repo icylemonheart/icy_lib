@@ -1,24 +1,31 @@
 package com.icylib;
 
+import com.icylib.armor.ArmorSystem;
+import com.icylib.client.IcyLibClient;
 import com.icylib.config.IcyLibConfig;
+import com.icylib.config.MultiplyMigrationConfig;
+import com.icylib.defense.DefenseSystemManager;
 import com.icylib.event.CriticalStrikeEventHandler;
 import com.icylib.event.DefenseEventHandler;
+import com.icylib.event.MultiplyTotalMigrationHandler;
 import com.icylib.init.ModAttributes;
 import com.icylib.init.ModEffects;
 import com.icylib.init.ModMenuTypes;
 import com.icylib.init.ModUpgradeItems;
+import com.icylib.shield.ShieldSystem;
 import com.mojang.logging.LogUtils;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.event.entity.EntityAttributeModificationEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -32,33 +39,48 @@ public class IcyLib {
 
     public static List<com.icylib.upgrade.ExpItem> EXP_ITEMS = new ArrayList<>();
 
-    public IcyLib() {
-        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
-        
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, IcyLibConfig.SPEC, "icy_lib-common.toml");
-        
+    public IcyLib(IEventBus bus, ModContainer modContainer) {
+        // 所有 icy 系列模组的配置文件统一放在 config/icy/ 目录下，便于管理和迁移
+        modContainer.registerConfig(ModConfig.Type.COMMON, IcyLibConfig.SPEC, "icy/icy_lib-common.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, MultiplyMigrationConfig.SPEC, "icy/multiply_migration.toml");
+
         ModAttributes.ATTRIBUTES.register(bus);
         ModEffects.EFFECTS.register(bus);
         ModMenuTypes.MENU_TYPES.register(bus);
         ModUpgradeItems.UPGRADE_ITEMS.register(bus);
-        
+
         bus.addListener(this::setup);
         bus.addListener(this::onEntityAttributeModification);
-        
-        MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(new CriticalStrikeEventHandler());
-        MinecraftForge.EVENT_BUS.register(new DefenseEventHandler());
+
+        NeoForge.EVENT_BUS.register(new CriticalStrikeEventHandler());
+        NeoForge.EVENT_BUS.register(new DefenseEventHandler());
+        NeoForge.EVENT_BUS.register(new MultiplyTotalMigrationHandler());
+
+        // 显式注册防御系统核心类，确保 @SubscribeEvent 静态方法被正确调用
+        // register() 会触发类加载，从而执行 DefenseSystemManager 的静态初始化块注册防御层
+        NeoForge.EVENT_BUS.register(DefenseSystemManager.class);
+        NeoForge.EVENT_BUS.register(ShieldSystem.class);
+        NeoForge.EVENT_BUS.register(ArmorSystem.class);
+
+        // 客户端侧初始化：仅在客户端加载 IcyLibClient，避免服务端引用客户端类
+        if (FMLEnvironment.dist.isClient()) {
+            IcyLibClient.registerClient(bus);
+            // 注册 FancyText tooltip 事件监听器（ItemTooltipEvent + RenderTooltipEvent.Color）
+            NeoForge.EVENT_BUS.register(com.icylib.fancytext.FancyTextTooltipEvents.class);
+            NeoForge.EVENT_BUS.register(com.icylib.quality.QualityTooltipEvents.class);
+        }
     }
 
     private void setup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            LOGGER.info("Icy Lib loaded successfully!");
+            LOGGER.info("Icy Lib v1.1.1 (NeoForge 1.21.1) loaded successfully!");
             LOGGER.info("Damage types registered: physical, ice, fire, light, shadow, magic, poison, void, punishing");
-            LOGGER.info("Iron Spells compatibility: fire_magic, ice_magic, lightning_magic, holy_magic, nature_magic, ender_magic, evocation_magic, blood_magic, eldritch_magic, poison_cloud, heartstop, fire_field, dragon_breath_pool, blood_cauldron");
-            LOGGER.info("TACZ compatibility: bullet, bullet_ignore_armor, bullet_void, bullet_void_ignore_armor (all mapped to physical damage)");
-            LOGGER.info("Effects registered: fortitude, hyper_calculation_space");
+            LOGGER.info("Effects registered: fortitude, hyper_calculation_space, rage, scorching, electrocution, catherine_shield, piercing, corrosion");
             LOGGER.info("Upgrade system loaded: stages=10, exp_items, boost_items, upgrade_menu, recycle_menu");
-            
+            LOGGER.info("Defense system loaded: layers=[SHIELD(priority=0), ARMOR(priority=1)], manager=DefenseSystemManager, extensible via DefenseApplyEvent");
+            LOGGER.info("Multiply migration loaded: independent-zone (ADD_MULTIPLIED_TOTAL) → multiply-base (ADD_MULTIPLIED_BASE), per-tick scan, UUID→ResourceLocation id whitelist");
+            LOGGER.info("FancyText loaded: 50+ presets, tooltip background modes=[COLOR, STARRY_SKY, TEXTURE], FontEffectMixin intercepts drawInBatch/width");
+
             EXP_ITEMS.add(ModUpgradeItems.EXP_ITEM_1.get());
             EXP_ITEMS.add(ModUpgradeItems.EXP_ITEM_2.get());
             EXP_ITEMS.add(ModUpgradeItems.EXP_ITEM_3.get());
@@ -69,21 +91,21 @@ public class IcyLib {
 
     private void onEntityAttributeModification(final EntityAttributeModificationEvent event) {
         for (EntityType<? extends LivingEntity> entityType : event.getTypes()) {
-            event.add(entityType, ModAttributes.CRITICAL_STRIKE_CHANCE.get());
-            event.add(entityType, ModAttributes.DEFENSE.get());
-            event.add(entityType, ModAttributes.CRITICAL_STRIKE_DEFENSE.get());
-            event.add(entityType, ModAttributes.CRITICAL_STRIKE_MULTIPLIER_ADD.get());
-            event.add(entityType, ModAttributes.CRITICAL_STRIKE_MULTIPLIER_MULTIPLY.get());
-            event.add(entityType, ModAttributes.PHYSICAL_RESISTANCE.get());
-            event.add(entityType, ModAttributes.ELEMENTAL_RESISTANCE.get());
-            event.add(entityType, ModAttributes.UNIVERSAL_RESISTANCE.get());
-            event.add(entityType, ModAttributes.ICE_RESISTANCE.get());
-            event.add(entityType, ModAttributes.FIRE_RESISTANCE.get());
-            event.add(entityType, ModAttributes.LIGHT_RESISTANCE.get());
-            event.add(entityType, ModAttributes.SHADOW_RESISTANCE.get());
-            event.add(entityType, ModAttributes.MAGIC_RESISTANCE.get());
-            event.add(entityType, ModAttributes.POISON_RESISTANCE.get());
-            event.add(entityType, ModAttributes.VOID_RESISTANCE.get());
+            event.add(entityType, ModAttributes.CRITICAL_STRIKE_CHANCE);
+            event.add(entityType, ModAttributes.DEFENSE);
+            event.add(entityType, ModAttributes.CRITICAL_STRIKE_DEFENSE);
+            event.add(entityType, ModAttributes.CRITICAL_STRIKE_MULTIPLIER_ADD);
+            event.add(entityType, ModAttributes.CRITICAL_STRIKE_MULTIPLIER_MULTIPLY);
+            event.add(entityType, ModAttributes.PHYSICAL_RESISTANCE);
+            event.add(entityType, ModAttributes.ELEMENTAL_RESISTANCE);
+            event.add(entityType, ModAttributes.UNIVERSAL_RESISTANCE);
+            event.add(entityType, ModAttributes.ICE_RESISTANCE);
+            event.add(entityType, ModAttributes.FIRE_RESISTANCE);
+            event.add(entityType, ModAttributes.LIGHT_RESISTANCE);
+            event.add(entityType, ModAttributes.SHADOW_RESISTANCE);
+            event.add(entityType, ModAttributes.MAGIC_RESISTANCE);
+            event.add(entityType, ModAttributes.POISON_RESISTANCE);
+            event.add(entityType, ModAttributes.VOID_RESISTANCE);
         }
     }
 }

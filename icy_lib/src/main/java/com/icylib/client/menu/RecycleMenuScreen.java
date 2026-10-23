@@ -24,13 +24,13 @@ public class RecycleMenuScreen extends AbstractContainerScreen<RecycleMenu> {
         guiGraphics.drawString(font, title, titleLabelX, titleLabelY, 4210752, false);
         guiGraphics.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 4210752, false);
 
-        String totalExpText = "Total EXP: " + menu.totalExp;
+        String totalExpText = "总经验: " + menu.totalExp;
         guiGraphics.drawString(font, Component.literal(totalExpText).withStyle(ChatFormatting.GOLD), 134, 20, 4210752, false);
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

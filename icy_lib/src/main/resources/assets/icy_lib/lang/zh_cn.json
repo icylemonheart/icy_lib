@@ -24,7 +24,7 @@
   "icy_lib:poison_resistance": "毒素抗性",
   "icy_lib:poison_resistance.desc": "减少受到的毒素伤害，实际毒素伤害=原毒素伤害÷(毒素抗性×元素抗性)÷通用抗性-防御。",
   "icy_lib:void_resistance": "虚空抗性",
-  "icy_lib:void_resistance.desc": "减少受到的虚空伤害，实际虚空伤害=原虚空伤害÷虚空抗性÷通用抗性-防御。",
+  "icy_lib:void_resistance.desc": "减少受到的虚空伤害，实际虚空伤害÷虚空抗性÷通用抗性-防御。",
   "icy_lib:critical_strike_multiplier_add": "会心伤害加成",
   "icy_lib:critical_strike_multiplier_add.desc": "会心一击的伤害加成（加算），基础会心伤害为150%。",
   "icy_lib:critical_strike_multiplier_multiply": "会心伤害乘算",

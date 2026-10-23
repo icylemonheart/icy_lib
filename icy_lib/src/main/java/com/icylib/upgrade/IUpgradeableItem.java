@@ -31,4 +31,12 @@ public interface IUpgradeableItem {
     BiFunction<AwarenessUpgradeStats, Integer, Double>[] getAttributeGrowthFunctions();
 
     List<ItemStack> getBreakthroughMaterials(ItemStack stack, int stage);
+
+    default boolean upgradeWithMaterials() {
+        return false;
+    }
+
+    default List<ItemStack> getUpgradeMaterials(ItemStack stack) {
+        return List.of();
+    }
 }

@@ -19,16 +19,16 @@ public class UpgradeMenu extends AbstractContainerMenu {
     private final SimpleContainer upgradeContainer;
     private final SimpleContainer materialsContainer;
     private final Player player;
-    
+
     private final DataSlot experience;
     private final DataSlot expCost;
     private final DataSlot breakthroughCost;
     private boolean isProcessingSlotsChanged = false;
-    
+
     public int getExpCost() {
         return expCost.get();
     }
-    
+
     public int getBreakthroughCost() {
         return breakthroughCost.get();
     }
@@ -39,12 +39,12 @@ public class UpgradeMenu extends AbstractContainerMenu {
         this.upgradeContainer = new SimpleContainer(1);
         this.materialsContainer = new SimpleContainer(9);
 
-        addSlot(new Slot(upgradeContainer, 0, 80, 35) {
+        addSlot(new Slot(upgradeContainer, 0, 162, 20) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof IUpgradeableItem;
             }
-            
+
             @Override
             public void set(ItemStack stack) {
                 super.set(stack);
@@ -57,7 +57,7 @@ public class UpgradeMenu extends AbstractContainerMenu {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 int idx = i * 3 + j;
-                addSlot(new Slot(materialsContainer, idx, 58 + j * 18, 84 + i * 18) {
+                addSlot(new Slot(materialsContainer, idx, 8 + j * 18, 60 + i * 18) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
                         return isValidBreakthroughMaterial(stack);
@@ -86,21 +86,21 @@ public class UpgradeMenu extends AbstractContainerMenu {
         addDataSlot(this.experience);
         addDataSlot(this.expCost);
         addDataSlot(this.breakthroughCost);
-        
+
         this.experience.set(getPlayerExp());
         updateCosts();
     }
-    
+
     private void updateCosts() {
         ItemStack stack = upgradeContainer.getItem(0);
         int ec = 0;
         int breakthroughCost = 0;
-        
+
         if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
             var opt = upgradeable.getUpgradeStats(stack);
             if (opt.isPresent()) {
                 var stats = opt.get();
-                if (AwarenessUpgradeManager.canUpgrade(stats)) {
+                if (!upgradeable.upgradeWithMaterials() && AwarenessUpgradeManager.canUpgrade(stats)) {
                     ec = AwarenessUpgradeManager.getExpForLevel(stats, stats.level);
                 }
                 if (AwarenessUpgradeManager.canBreakthrough(stats)) {
@@ -108,7 +108,7 @@ public class UpgradeMenu extends AbstractContainerMenu {
                 }
             }
         }
-        
+
         this.expCost.set(ec);
         this.breakthroughCost.set(breakthroughCost);
     }
@@ -118,10 +118,15 @@ public class UpgradeMenu extends AbstractContainerMenu {
         if (upgradeItem.isEmpty() || !(upgradeItem.getItem() instanceof IUpgradeableItem upgradeable)) {
             return false;
         }
+        for (ItemStack requiredStack : upgradeable.getUpgradeMaterials(upgradeItem)) {
+            if (ItemStack.isSameItemSameComponents(stack, requiredStack)) {
+                return true;
+            }
+        }
         return upgradeable.getUpgradeStats(upgradeItem).map(stats -> {
             List<ItemStack> required = upgradeable.getBreakthroughMaterials(upgradeItem, stats.stage);
             for (ItemStack requiredStack : required) {
-                if (ItemStack.isSameItemSameTags(stack, requiredStack)) {
+                if (ItemStack.isSameItemSameComponents(stack, requiredStack)) {
                     return true;
                 }
             }
@@ -138,24 +143,43 @@ public class UpgradeMenu extends AbstractContainerMenu {
         if (player.level().isClientSide || isProcessingSlotsChanged) return;
 
         isProcessingSlotsChanged = true;
-        
+
         updateCosts();
-        
+
         isProcessingSlotsChanged = false;
-        
+
         super.slotsChanged(container);
     }
 
     @Override
     public boolean clickMenuButton(Player player, int button) {
         if (button == 0) {
+            ItemStack materialStack = upgradeContainer.getItem(0);
+            if (!materialStack.isEmpty() && materialStack.getItem() instanceof IUpgradeableItem materialUpgradeable
+                    && materialUpgradeable.upgradeWithMaterials()) {
+                if (!materialUpgradeable.canUpgrade(materialStack)) {
+                    return false;
+                }
+                List<ItemStack> required = materialUpgradeable.getUpgradeMaterials(materialStack);
+                if (!hasEnoughMaterials(required)) {
+                    return false;
+                }
+                boolean success = materialUpgradeable.tryUpgrade(materialStack, player);
+                if (success) {
+                    consumeRequiredMaterials(required);
+                    upgradeContainer.setItem(0, materialStack.copy());
+                    updateCosts();
+                }
+                return true;
+            }
+
             int cost = expCost.get();
             int playerExp = getPlayerExp();
-            
+
             if (cost <= 0 || cost > playerExp) {
                 return false;
             }
-            
+
             ItemStack stack = upgradeContainer.getItem(0);
             if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
                 boolean success = upgradeable.tryUpgrade(stack, player);
@@ -168,18 +192,21 @@ public class UpgradeMenu extends AbstractContainerMenu {
             return true;
         } else if (button == 1) {
             int breakthroughCostVal = breakthroughCost.get();
-            
+
             if (breakthroughCostVal <= 0 || !hasEnoughMaterials()) {
                 return false;
             }
-            
+
             ItemStack stack = upgradeContainer.getItem(0);
             if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
+                List<ItemStack> required = upgradeable.getUpgradeStats(stack)
+                        .map(stats -> upgradeable.getBreakthroughMaterials(stack, stats.stage))
+                        .orElse(List.of());
                 List<ItemStack> materials = collectMaterials();
                 boolean success = upgradeable.tryBreakthrough(stack, player, materials);
                 if (success) {
                     upgradeContainer.setItem(0, stack.copy());
-                    consumeMaterials();
+                    consumeRequiredMaterials(required);
                     updateCosts();
                 }
             }
@@ -201,7 +228,7 @@ public class UpgradeMenu extends AbstractContainerMenu {
         }
         return 0;
     }
-    
+
     private int recalculateBreakthroughCost() {
         ItemStack stack = upgradeContainer.getItem(0);
         if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
@@ -227,28 +254,21 @@ public class UpgradeMenu extends AbstractContainerMenu {
         return materials;
     }
 
-    private void consumeMaterials() {
-        ItemStack stack = upgradeContainer.getItem(0);
-        if (stack.isEmpty() || !(stack.getItem() instanceof IUpgradeableItem upgradeable)) {
-            return;
-        }
-        upgradeable.getUpgradeStats(stack).ifPresent(stats -> {
-            List<ItemStack> required = upgradeable.getBreakthroughMaterials(stack, stats.stage);
-            for (ItemStack requiredStack : required) {
-                int needed = requiredStack.getCount();
-                for (int i = 0; i < materialsContainer.getContainerSize() && needed > 0; i++) {
-                    ItemStack material = materialsContainer.getItem(i);
-                    if (ItemStack.isSameItemSameTags(material, requiredStack)) {
-                        int take = Math.min(needed, material.getCount());
-                        material.shrink(take);
-                        needed -= take;
-                        if (material.isEmpty()) {
-                            materialsContainer.setItem(i, ItemStack.EMPTY);
-                        }
+    private void consumeRequiredMaterials(List<ItemStack> required) {
+        for (ItemStack requiredStack : required) {
+            int needed = requiredStack.getCount();
+            for (int i = 0; i < materialsContainer.getContainerSize() && needed > 0; i++) {
+                ItemStack material = materialsContainer.getItem(i);
+                if (ItemStack.isSameItemSameComponents(material, requiredStack)) {
+                    int take = Math.min(needed, material.getCount());
+                    material.shrink(take);
+                    needed -= take;
+                    if (material.isEmpty()) {
+                        materialsContainer.setItem(i, ItemStack.EMPTY);
                     }
                 }
             }
-        });
+        }
     }
 
     @Override
@@ -297,17 +317,23 @@ public class UpgradeMenu extends AbstractContainerMenu {
             for (int i = 0; i < upgradeContainer.getContainerSize(); i++) {
                 ItemStack stack = upgradeContainer.getItem(i);
                 if (!stack.isEmpty()) {
-                    player.drop(stack, false);
+                    returnToInventoryOrDrop(player, stack);
                     upgradeContainer.setItem(i, ItemStack.EMPTY);
                 }
             }
             for (int i = 0; i < materialsContainer.getContainerSize(); i++) {
                 ItemStack stack = materialsContainer.getItem(i);
                 if (!stack.isEmpty()) {
-                    player.drop(stack, false);
+                    returnToInventoryOrDrop(player, stack);
                     materialsContainer.setItem(i, ItemStack.EMPTY);
                 }
             }
+        }
+    }
+
+    private static void returnToInventoryOrDrop(Player player, ItemStack stack) {
+        if (!player.getInventory().add(stack)) {
+            player.drop(stack, false);
         }
     }
 
@@ -323,19 +349,34 @@ public class UpgradeMenu extends AbstractContainerMenu {
         }
         return upgradeable.getUpgradeStats(stack).map(stats -> {
             List<ItemStack> required = upgradeable.getBreakthroughMaterials(stack, stats.stage);
-            for (ItemStack requiredStack : required) {
-                int found = 0;
-                for (int i = 0; i < materialsContainer.getContainerSize(); i++) {
-                    ItemStack material = materialsContainer.getItem(i);
-                    if (ItemStack.isSameItemSameTags(material, requiredStack)) {
-                        found += material.getCount();
-                    }
-                }
-                if (found < requiredStack.getCount()) {
-                    return false;
+            return hasEnoughMaterials(required);
+        }).orElse(false);
+    }
+
+    public boolean hasEnoughUpgradeMaterials() {
+        ItemStack stack = upgradeContainer.getItem(0);
+        if (stack.isEmpty() || !(stack.getItem() instanceof IUpgradeableItem upgradeable)) {
+            return false;
+        }
+        return hasEnoughMaterials(upgradeable.getUpgradeMaterials(stack));
+    }
+
+    public boolean hasEnoughMaterials(List<ItemStack> required) {
+        if (required.isEmpty()) {
+            return false;
+        }
+        for (ItemStack requiredStack : required) {
+            int found = 0;
+            for (int i = 0; i < materialsContainer.getContainerSize(); i++) {
+                ItemStack material = materialsContainer.getItem(i);
+                if (ItemStack.isSameItemSameComponents(material, requiredStack)) {
+                    found += material.getCount();
                 }
             }
-            return true;
-        }).orElse(false);
+            if (found < requiredStack.getCount()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

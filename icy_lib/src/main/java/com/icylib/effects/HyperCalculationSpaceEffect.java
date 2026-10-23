@@ -4,7 +4,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 
 /**
- * Hyper Calculation Space effect - Enter slow-motion state (from Punishing: Gray Raven)
+ * 超算空间效果 - 进入慢动作状态（来自战双帕弥什的设定）
  */
 public class HyperCalculationSpaceEffect extends MobEffect {
     public static final float SLOW_MOTION_FACTOR = 0.1F;
@@ -14,7 +14,7 @@ public class HyperCalculationSpaceEffect extends MobEffect {
     }
 
     @Override
-    public boolean isDurationEffectTick(int duration, int amplifier) {
+    public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
         return duration > 0;
     }
 }

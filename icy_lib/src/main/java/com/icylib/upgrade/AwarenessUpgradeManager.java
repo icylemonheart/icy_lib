@@ -15,7 +15,7 @@ public class AwarenessUpgradeManager {
     private static final double EXP_CONVERSION_RANK_FACTOR = 2.0;
 
     private static Function<Player, Integer> expProvider = player -> player.experienceLevel;
-    private static BiFunction<AwarenessUpgradeStats, Integer, Integer> expCostCalculator = (stats, level) -> 
+    private static BiFunction<AwarenessUpgradeStats, Integer, Integer> expCostCalculator = (stats, level) ->
             BASE_EXP_COST + level * EXP_LEVEL_INCREMENT + (stats.rank - 1) * EXP_RANK_MULTIPLIER;
 
     public static void setExpProvider(Function<Player, Integer> provider) {
@@ -108,7 +108,7 @@ public class AwarenessUpgradeManager {
         return stats != null && stats.level >= getMaxLevel(stats.stage, stats.rank) && stats.stage < getMaxStage(stats.rank);
     }
 
-    public static boolean tryUpgrade(AwarenessUpgradeStats stats, Player player, 
+    public static boolean tryUpgrade(AwarenessUpgradeStats stats, Player player,
             BiFunction<AwarenessUpgradeStats, Integer, Double>[] attributeGrowthFunctions) {
         if (!canUpgrade(stats)) {
             return false;
@@ -116,14 +116,14 @@ public class AwarenessUpgradeManager {
 
         int cost = getExpForLevel(stats, stats.level);
         int playerExp = getPlayerExp(player);
-        
+
         if (playerExp < cost) {
             return false;
         }
 
         player.giveExperienceLevels(-cost);
         stats.exp += cost;
-        
+
         int maxLevel = getMaxLevel(stats.stage, stats.rank);
         while (stats.level < maxLevel) {
             int expNeeded = getExpForLevel(stats, stats.level);
@@ -133,7 +133,7 @@ public class AwarenessUpgradeManager {
             stats.exp -= expNeeded;
             stats.totalExp += expNeeded;
             stats.level++;
-            
+
             if (attributeGrowthFunctions != null) {
                 for (int i = 0; i < stats.attributes.size() && i < attributeGrowthFunctions.length; i++) {
                     double growth = attributeGrowthFunctions[i].apply(stats, stats.level);
@@ -141,7 +141,7 @@ public class AwarenessUpgradeManager {
                 }
             }
         }
-        
+
         if (stats.level >= maxLevel) {
             stats.exp = 0;
         }

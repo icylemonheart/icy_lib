@@ -1,20 +1,23 @@
 # Icy Lib
 
-A core library mod for Minecraft Forge (1.20.1) providing utilities and attributes for icy series mods.
+A core library mod for Minecraft NeoForge 1.21.1 providing utilities and attributes for icy series mods.
 
 ## Features
 
 - **Custom Damage Types**: Physical, Ice, Fire, Light, Shadow, Magic, Poison, Punishing, and Void damage types
-- **Attributes System**: Critical strike, defense, and critical strike defense attributes
+- **Attributes System**: Critical strike, defense, critical strike defense and resistance attributes
+- **Quality System**: Rank-based item slot background and tooltip rendering with per-rank gradient colors
+- **Fancy Text Tooltips**: Rich text tooltip effects, including custom backgrounds and fonts
 - **Shield System**: Shield management with HUD display
 - **Effects**: Various effects including Rage, Scorching, Electrocution, Piercing, Corrosion, Fortitude, Hyper Calculation Space, and Catherine Shield
 - **Upgrade System**: Framework for item upgrading and breakthrough
 - **Menu System**: Upgrade and recycle menus
+- **Migration Protection API**: Keeps downstream `ADD_MULTIPLIED_TOTAL` modifiers in the independent multiply zone
 
 ## Requirements
 
-- Minecraft Forge 1.20.1 (47.1.0)
-- Java 17
+- Minecraft NeoForge 1.21.1 (21.1.235)
+- Java 21
 
 ## Building
 
@@ -25,8 +28,8 @@ A core library mod for Minecraft Forge (1.20.1) providing utilities and attribut
 ## Installation
 
 1. Build the mod using `./gradlew build`
-2. Copy `build/libs/icy_lib-1.0.0.jar` to your Forge mod folder
-3. Launch Minecraft with Forge
+2. Copy `build/libs/icy_lib-1.1.2.jar` to your NeoForge mod folder
+3. Launch Minecraft with NeoForge
 
 ## License
 
