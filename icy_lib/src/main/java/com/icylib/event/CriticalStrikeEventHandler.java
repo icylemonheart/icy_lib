@@ -13,11 +13,7 @@ import java.lang.reflect.Field;
 import java.util.Random;
 
 /**
- * 会心事件处理器 - 处理会心攻击和会心防御
- *
- * 会心计算公式：
- * - 实际会心概率 = (攻击者会心 - 目标会心防御) %
- * - 非玩家实体默认拥有十分之一护甲值的会心防御属性
+ * 会心结算：实际概率 = 攻击者会心 - 目标会心防御，非玩家目标按护甲补正会心防御。
  */
 public class CriticalStrikeEventHandler {
 

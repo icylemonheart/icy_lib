@@ -5,15 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 艺术字样式注册表。
- *
- * 以字符串 ID（建议 modid:style_name 格式）注册和查找样式，
- * 首次访问时自动加载内置预设（{@link FancyTextPresets}）。
- *
- * 服务端也可安全使用（样式为纯数据 + 数学计算，无客户端类依赖），
- * 可配合 {@link FancyTextRenderer#toLegacyString} 生成带 § 颜色代码的静态文本用于聊天等场景。
- */
+/** 艺术字样式注册表：ID 不区分大小写，首次访问自动加载内置预设。 */
 public final class FancyTextRegistry {
 
     private static final Map<String, FancyTextStyle> STYLES = new ConcurrentHashMap<>();
@@ -22,12 +14,10 @@ public final class FancyTextRegistry {
     private FancyTextRegistry() {
     }
 
-    /** 注册样式，ID 重复时覆盖 */
     public static void register(String id, FancyTextStyle style) {
         STYLES.put(id.toLowerCase(Locale.ROOT), style);
     }
 
-    /** 按 ID 查找样式，未找到返回 null */
     public static FancyTextStyle get(String id) {
         ensureBootstrapped();
         if (id == null) {
@@ -40,7 +30,6 @@ public final class FancyTextRegistry {
         return get(id) != null;
     }
 
-    /** 所有已注册的样式 ID（小写） */
     public static Set<String> ids() {
         ensureBootstrapped();
         return Set.copyOf(STYLES.keySet());

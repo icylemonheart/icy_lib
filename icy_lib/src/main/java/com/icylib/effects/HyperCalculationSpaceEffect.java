@@ -4,7 +4,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 
 /**
- * 超算空间效果 - 进入慢动作状态（来自战双帕弥什的设定）
+ * 超算空间：进入慢动作状态。
  */
 public class HyperCalculationSpaceEffect extends MobEffect {
     public static final float SLOW_MOTION_FACTOR = 0.1F;

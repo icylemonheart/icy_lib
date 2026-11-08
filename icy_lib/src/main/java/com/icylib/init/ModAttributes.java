@@ -12,9 +12,6 @@ public class ModAttributes {
     public static final DeferredRegister<Attribute> ATTRIBUTES =
             DeferredRegister.create(BuiltInRegistries.ATTRIBUTE, IcyLib.MODID);
 
-    /**
-     * 属性上限 - 21亿
-     */
     public static final double ATTRIBUTE_MAX_VALUE = Integer.MAX_VALUE;
 
     public static final DeferredHolder<Attribute, Attribute> CRITICAL_STRIKE_CHANCE =

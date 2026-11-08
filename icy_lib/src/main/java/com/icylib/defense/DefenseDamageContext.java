@@ -9,22 +9,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 防御伤害上下文。
- *
- * 描述一次伤害如何作用于防御系统，支持：
- * - SEQUENTIAL 模式（默认）：按 priority 顺序依次吸收，shield → armor → health
- * - SIMULTANEOUS 模式：按比例同时作用于多个层级（含 health）
- * - BYPASS 标记：指定伤害跳过的层级（护盾穿透、护甲穿透）
- *
- * 通过 Builder 模式构建，第三方模组可通过 {@link DefenseApplyEvent} 修改上下文，
- * 无需改动核心逻辑即可扩展新伤害类型。
+ * 防御伤害上下文：SEQUENTIAL 按 priority 顺序吸收，SIMULTANEOUS 按比例分流。
  */
 public class DefenseDamageContext {
 
     public enum Mode {
-        /** 按层级 priority 顺序吸收，未吸收部分传递给下一层 */
         SEQUENTIAL,
-        /** 按比例同时作用于多个层级，health 仍承受原始伤害 */
         SIMULTANEOUS
     }
 
@@ -66,9 +56,6 @@ public class DefenseDamageContext {
         return splitRatios;
     }
 
-    /**
-     * 创建默认上下文：SEQUENTIAL 模式，无穿透。
-     */
     public static DefenseDamageContext forSource(DamageSource source, float damage) {
         return new Builder(source, damage).build();
     }

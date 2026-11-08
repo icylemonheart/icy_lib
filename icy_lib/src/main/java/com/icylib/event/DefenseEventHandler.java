@@ -12,13 +12,7 @@ import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 /**
- * 防御事件处理器 - 处理所有抗性和防御属性
- *
- * 伤害计算公式：
- * - 帕弥什伤害：不受任何抗性和防御影响
- * - 物理伤害：实际伤害 = 原伤害 ÷ 物理抗性 ÷ 通用抗性 - 防御
- * - 元素伤害：实际伤害 = 原伤害 ÷ (对应元素抗性 × 元素抗性) ÷ 通用抗性 - 防御
- * - 虚空伤害：实际伤害 = 原伤害 ÷ 虚空抗性 ÷ 通用抗性 - 防御
+ * 抗性/防御结算：实际伤害 = 原伤害 ÷ 抗性 ÷ 通用抗性 - 防御，帕弥什伤害不受影响。
  */
 public class DefenseEventHandler {
 

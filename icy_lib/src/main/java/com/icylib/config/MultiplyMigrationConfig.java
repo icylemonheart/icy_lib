@@ -6,30 +6,14 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 import java.util.List;
 
 /**
- * 独立乘区 → 乘法乘区 迁移配置。
- * Independent multiply zone (ADD_MULTIPLIED_TOTAL) → multiply-base zone (ADD_MULTIPLIED_BASE) migration config.
- *
- * 对配置中列出的属性，每 tick 扫描其 ADD_MULTIPLIED_TOTAL 修饰符，
- * 用 counteract (1/P - 1) 抵消独立乘区乘积 P，
- * 用 migration (∑mi) 加到 ADD_MULTIPLIED_BASE 乘区，
- * 等价于：把所有 ADD_MULTIPLIED_TOTAL modifier 按加法语义迁移到 ADD_MULTIPLIED_BASE。
- *
- * For the configured attributes, each tick scans ADD_MULTIPLIED_TOTAL modifiers,
- * cancels the independent-zone product P with a counteract (1/P - 1) modifier,
- * and adds migration (∑mi) to ADD_MULTIPLIED_BASE, i.e. every ADD_MULTIPLIED_TOTAL
- * modifier is migrated to ADD_MULTIPLIED_BASE using additive semantics.
- *
- * id 白名单：列出的 modifier id (ResourceLocation) 保留在独立乘区，不参与迁移。默认为空 = 迁移全部。
- * id whitelist: listed modifier ids stay in the independent zone. Empty = migrate all.
+ * 独立乘区 → 乘法乘区迁移配置；PROTECTED_IDS 内的 modifier 保留在独立乘区。
  */
 public class MultiplyMigrationConfig {
     public static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
     public static final ModConfigSpec SPEC;
 
-    /** 要实施迁移的属性注册名列表（简写如 max_health 会自动补全 minecraft:generic. 前缀） / Registry names of attributes to migrate (shorthand like max_health expands to minecraft:generic.max_health). */
     public static final ModConfigSpec.ConfigValue<List<? extends String>> TARGET_ATTRIBUTES;
 
-    /** 保留在独立乘区的 modifier id (ResourceLocation) 白名单（下游模组也可通过 com.icylib.api.MultiplyMigrationProtection 注册） / Whitelist of modifier ids kept in the independent zone (downstream mods may also register via com.icylib.api.MultiplyMigrationProtection). */
     public static final ModConfigSpec.ConfigValue<List<? extends String>> PROTECTED_IDS;
 
     static {

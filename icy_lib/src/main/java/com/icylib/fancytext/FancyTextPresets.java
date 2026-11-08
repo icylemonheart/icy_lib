@@ -1,16 +1,8 @@
 package com.icylib.fancytext;
 
-/**
- * 内置艺术字预设注册表。
- *
- * 首次访问 {@link FancyTextRegistry} 时自动加载。
- * 所有 ID 以 icy_lib: 为前缀，可直接用于渲染或 toLegacyString。
- *
- * 所有预设均已配置与文字主题匹配的 tooltip 背景（COLOR 或 STARRY_SKY 模式）。
- */
+/** 内置艺术字预设注册表，ID 均以 icy_lib: 前缀。 */
 public final class FancyTextPresets {
 
-    // ==================== 预设 ID 常量 ====================
     public static final String SKY_STRIPE = "icy_lib:sky_stripe";
     public static final String ICE_GLIMMER = "icy_lib:ice_glimmer";
     public static final String FROST_WAVE = "icy_lib:frost_wave";
@@ -34,12 +26,10 @@ public final class FancyTextPresets {
     public static final String GOLDEN_FLOW = "icy_lib:golden_flow";
     public static final String GHOST_BREATH = "icy_lib:ghost_breath";
 
-    // ---------- 生命之织缕契约专属预设 ----------
     public static final String LIFE_THREAD = "icy_lib:life_thread";
     public static final String PRICE_GRADIENT = "icy_lib:price_gradient";
     public static final String JADE_PULSE = "icy_lib:jade_pulse";
     public static final String LIFE_TIDE = "icy_lib:life_tide";
-    // ---- 1.0.1 新增 ----
     public static final String PUNISHING_CRIMSON = "icy_lib:punishing_crimson";
     public static final String HYPER_SPACE = "icy_lib:hyper_space";
     public static final String NEON_PULSE = "icy_lib:neon_pulse";
@@ -53,25 +43,21 @@ public final class FancyTextPresets {
     public static final String BUTTERFLY_DANCE = "icy_lib:butterfly_dance";
     public static final String STARRY_NIGHT = "icy_lib:starry_night";
 
-    // ---------- 渴求之器具契约专属预设 ----------
     public static final String YEARNING_VESSEL = "icy_lib:yearning_vessel";
     public static final String CRIMSON_GOLD = "icy_lib:crimson_gold";
     public static final String HUNGER_GRADIENT = "icy_lib:hunger_gradient";
     public static final String AZURE_GOLD = "icy_lib:azure_gold";
 
-    // ---------- 魂灵之月窠契约专属预设 ----------
     public static final String SOUL_MOON_NEST = "icy_lib:soul_moon_nest";
     public static final String SOUL_PULSE = "icy_lib:soul_pulse";
     public static final String SOUL_PRICE = "icy_lib:soul_price";
     public static final String SOUL_TIDE = "icy_lib:soul_tide";
 
-    // ---------- 世界之喰煞契约专属预设 ----------
     public static final String WORLD_DEVOURER = "icy_lib:world_devourer";
     public static final String DEVOURER_MAW = "icy_lib:devourer_maw";
     public static final String DEVOURER_TIDE = "icy_lib:devourer_tide";
     public static final String APOCALYPSE_GRADIENT = "icy_lib:apocalypse_gradient";
 
-    // ---------- 轮回之终末契约专属预设 ----------
     public static final String SAMSARA_END = "icy_lib:samsara_end";
     public static final String SAMSARA_TICK = "icy_lib:samsara_tick";
     public static final String SAMSARA_PRICE = "icy_lib:samsara_price";
@@ -82,97 +68,83 @@ public final class FancyTextPresets {
     private FancyTextPresets() {
     }
 
-    /** 注册全部内置预设（幂等，可安全重复调用） */
     public static synchronized void registerAll() {
         if (registered) {
             return;
         }
         registered = true;
 
-        // 天空流光：天蓝主体，黄色条带从右向左扫过（渐变过渡），条带处向上浮动2像素
         register(SKY_STRIPE, FancyTextStyle.builder(0x55AAFF)
                 .effect(FancyTextEffects.stripeSweep(0xFFDD44, 14.0F, 8.0F, 35.0F, true))
                 .effect(FancyTextEffects.floatEffect(2.0F, 0.8, FancyTextEffects.FloatMode.HIGHLIGHT_ONLY))
                 .tooltipBackground(TooltipBackground.solid(0xF0102040, 0x504488FF, 0x502244AA))
                 .build());
 
-        // 冰霜微光：冰蓝主体，白色细条带缓慢扫过，字符参差波浪浮动
         register(ICE_GLIMMER, FancyTextStyle.builder(0x7FD4FF)
                 .effect(FancyTextEffects.stripeSweep(0xFFFFFF, 10.0F, 7.0F, 18.0F, true))
                 .effect(FancyTextEffects.wave(1.0F, 0.5, 24.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF0102030, 0x507FD4FF, 0x504499CC))
                 .build());
 
-        // 寒霜之波：淡冰蓝主体，青白条带扫过并伴随字符波浪
         register(FROST_WAVE, FancyTextStyle.builder(0xA0E8FF)
                 .effect(FancyTextEffects.stripeSweep(0xE0FFFF, 12.0F, 6.0F, 24.0F, true))
                 .effect(FancyTextEffects.wave(1.5F, 0.6, 20.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF0152530, 0x50A0E8FF, 0x506699BB))
                 .build());
 
-        // 烈焰涌动：红→橙→金黄循环滚动渐变，字符起伏如火焰
         register(FLAME_BURST, FancyTextStyle.builder(0xFF4500)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0xFF2200, 0xFF6600, 0xFFAA00, 0xFFDD44}, 3.5, 0.7))
                 .effect(FancyTextEffects.wave(1.2F, 1.2, 14.0F))
                 .tooltipBackground(TooltipBackground.gradient(0xF02A0A00, 0xF0150500, 0x50FF7700, 0x50883300))
                 .build());
 
-        // 余烬脉冲：暗红主体向橙红呼吸脉冲
         register(EMBER_PULSE, FancyTextStyle.builder(0x8B0000)
                 .effect(FancyTextEffects.pulse(0xFF5522, 0.7, 0.15F))
                 .tooltipBackground(TooltipBackground.solid(0xF0200808, 0x50FF5522, 0x50882211))
                 .build());
 
-        // 圣辉：金色主体向暖白呼吸，字符参差波浪浮动
         register(HOLY_RADIANCE, FancyTextStyle.builder(0xFFD700)
                 .effect(FancyTextEffects.pulse(0xFFFFEE, 0.5, 0.1F))
                 .effect(FancyTextEffects.wave(1.5F, 0.4, 24.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF02A2005, 0x50FFD700, 0x50AA7700))
                 .build());
 
-        // 暗影闪烁：深紫主体随机闪烁，品红条带从左向右掠过
         register(SHADOW_FLICKER, FancyTextStyle.builder(0x550088)
                 .effect(FancyTextEffects.flicker(0x1144L, 0.5F, 1.5))
                 .effect(FancyTextEffects.stripeSweep(0xAA00AA, 12.0F, 6.0F, 12.0F, false))
                 .tooltipBackground(TooltipBackground.solid(0xF01A0A2A, 0x50AA00AA, 0x50550055))
                 .build());
 
-        // 虚空低语：黑紫字内流动渐变，透明度呼吸若隐若现（星空背景）
         register(VOID_WHISPER, FancyTextStyle.builder(0x330033)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0x441155, 0x7733AA, 0x330033}, 3.5, 0.4))
                 .effect(FancyTextEffects.alphaPulse(0.4, 0.55F))
                 .tooltipBackground(TooltipBackground.starrySky(StarfieldConfig.COOL_WHITE))
                 .build());
 
-        // 自然回春：绿→嫩绿字内流动渐变，字符轻柔起伏
         register(NATURE_SPRING, FancyTextStyle.builder(0x33AA33)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0x2FBF4F, 0x7CFC5A, 0xA6F25E}, 3.0, 0.45))
                 .effect(FancyTextEffects.wave(1.0F, 0.5, 22.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF00A1F0A, 0x5033AA33, 0x50117711))
                 .build());
 
-        // 生命织缕：绿→嫩绿→青绿三色字内流动（参考特效文本模组渐变算法），字符轻柔起伏
         register(LIFE_WEAVE, FancyTextStyle.builder(0x2FBF4F)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0x2FBF4F, 0xA6F25E, 0x54E0C8}, 3.0, 0.6))
                 .effect(FancyTextEffects.wave(1.0F, 0.5, 22.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF00A1F1A, 0x5033CC88, 0x50118855))
                 .build());
 
-        // 极光流动：青→荧光绿→冰蓝三色字内流动，舒缓波浪
         register(AURORA_FLOW, FancyTextStyle.builder(0x40E0D0)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0x40E0D0, 0x7FFFAA, 0x5599FF}, 3.5, 0.5))
                 .effect(FancyTextEffects.wave(1.0F, 0.45, 24.0F))
                 .tooltipBackground(TooltipBackground.gradient(0xF00A1F1F, 0xF00A1020, 0x5040E0D0, 0x502288AA))
                 .build());
 
-        // 落日余晖：橙→金→粉紫三色字内流动，舒缓波浪
         register(SUNSET_FLOW, FancyTextStyle.builder(0xFF7043)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0xFF7043, 0xFFB74D, 0xE65FB0}, 3.5, 0.5))
                 .effect(FancyTextEffects.wave(1.0F, 0.45, 24.0F))
                 .tooltipBackground(TooltipBackground.gradient(0xF02A1505, 0xF01A0A1A, 0x50FF7043, 0x50CC4488))
                 .build());
 
-        // 幻彩涌动：红橙黄绿青蓝紫六色全光谱字内流动，轻快波浪
         register(SPECTRUM_FLOW, FancyTextStyle.builder(0xFF3860)
                 .effect(FancyTextEffects.flowingGradient(new int[]{
                         0xFF3860, 0xFFB020, 0xFFE84A, 0x37D67A, 0x2F9BFF, 0x9B5CFF}, 4.0, 0.7))
@@ -180,295 +152,236 @@ public final class FancyTextPresets {
                 .tooltipBackground(TooltipBackground.gradient(0xF01A0A1A, 0xF00A1A1A, 0x50FF4488, 0x504488FF))
                 .build());
 
-        // 毒液滴落：毒绿主体，亮绿条带扫过，波浪起伏明显
         register(TOXIC_DRIP, FancyTextStyle.builder(0x55AA00)
                 .effect(FancyTextEffects.stripeSweep(0xAAFF00, 12.0F, 6.0F, 20.0F, true))
                 .effect(FancyTextEffects.wave(2.0F, 0.9, 16.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF0102005, 0x50AAFF00, 0x50558800))
                 .build());
 
-        // 雷霆一击：亮黄主体，白色条带快速掠过并伴随随机闪烁
         register(THUNDER_STRIKE, FancyTextStyle.builder(0xFFEE44)
                 .effect(FancyTextEffects.stripeSweep(0xFFFFFF, 14.0F, 5.0F, 60.0F, true))
                 .effect(FancyTextEffects.flicker(777L, 0.35F, 2.0))
                 .tooltipBackground(TooltipBackground.solid(0xF02A2505, 0x50FFEE44, 0x50AA8800))
                 .build());
 
-        // 血月：暗红主体向鲜红缓慢脉冲，字符参差波浪浮动
         register(BLOOD_MOON, FancyTextStyle.builder(0xAA0000)
                 .effect(FancyTextEffects.pulse(0xFF2222, 0.35, 0.2F))
                 .effect(FancyTextEffects.wave(1.0F, 0.3, 24.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF01F0505, 0x50FF2222, 0x50661111))
                 .build());
 
-        // 樱花飘散：粉色主体，白色条带缓慢扫过，条带处上浮（花瓣飘起感）
         register(SAKURA_DRIFT, FancyTextStyle.builder(0xFF99CC)
                 .effect(FancyTextEffects.stripeSweep(0xFFFFFF, 12.0F, 8.0F, 14.0F, true))
                 .effect(FancyTextEffects.floatEffect(2.0F, 0.45, FancyTextEffects.FloatMode.HIGHLIGHT_ONLY))
                 .tooltipBackground(TooltipBackground.solid(0xF02A0A1A, 0x50FF99CC, 0x50AA4477))
                 .build());
 
-        // 海洋潮汐：深蓝→青静态渐变打底，青色条带往复扫过
         register(OCEAN_TIDE, FancyTextStyle.builder(0x0066CC)
                 .effect(FancyTextEffects.gradient(new int[]{0x003377, 0x0077BB, 0x00AACC}, false, 0.0))
                 .effect(FancyTextEffects.stripeSweep(0x66EEFF, 14.0F, 8.0F, 22.0F, true))
                 .tooltipBackground(TooltipBackground.gradient(0xF0050A2A, 0xF002051A, 0x5066EEFF, 0x502277AA))
                 .build());
 
-        // 幻彩流转：全彩 HSV 彩虹沿文本流动
         register(RAINBOW_FLOW, FancyTextStyle.builder(0xFFFFFF)
                 .effect(FancyTextEffects.rainbow(0.85F, 1.0F, 0.08, 1.0F))
                 .tooltipBackground(TooltipBackground.gradient(0xF01A0A1A, 0xF00A1A1A, 0x50FF44AA, 0x5044AAFF))
                 .build());
 
-        // 晶体脉冲：亮青主体向白色脉冲，透明度同步呼吸
         register(CRYSTAL_PULSE, FancyTextStyle.builder(0x55EEEE)
                 .effect(FancyTextEffects.pulse(0xFFFFFF, 0.6, 0.1F))
                 .effect(FancyTextEffects.alphaPulse(0.8, 0.75F))
                 .tooltipBackground(TooltipBackground.solid(0xF0052020, 0x5055EEEE, 0x50229999))
                 .build());
 
-        // 鎏金流光：暗金主体，亮金条带扫过，条带处上浮
         register(GOLDEN_FLOW, FancyTextStyle.builder(0xAA6600)
                 .effect(FancyTextEffects.stripeSweep(0xFFCC33, 14.0F, 7.0F, 26.0F, true))
                 .effect(FancyTextEffects.floatEffect(1.5F, 0.7, FancyTextEffects.FloatMode.HIGHLIGHT_ONLY))
                 .tooltipBackground(TooltipBackground.solid(0xF01F1500, 0x50FFCC33, 0x50AA7700))
                 .build());
 
-        // 幽息：灰白主体，透明度深呼吸（幽灵感），字符参差波浪浮动
         register(GHOST_BREATH, FancyTextStyle.builder(0xCCDDEE)
                 .effect(FancyTextEffects.alphaPulse(0.3, 0.35F))
                 .effect(FancyTextEffects.wave(1.0F, 0.25, 24.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF01A1F25, 0x50CCDDEE, 0x50556677))
                 .build());
 
-        // ==================== 1.0.1 新增预设 ====================
-
-        // 帕弥什绯红：暗绯红→猩红→灼橙字内流动，字符剧烈起伏（帕弥什红潮感）
         register(PUNISHING_CRIMSON, FancyTextStyle.builder(0x991111)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0x880000, 0xFF2222, 0xFF6633}, 3.0, 0.65))
                 .effect(FancyTextEffects.wave(1.2F, 1.0, 16.0F))
                 .tooltipBackground(TooltipBackground.gradient(0xF02A0505, 0xF0150202, 0x50CC3333, 0x50661111))
                 .build());
 
-        // 超算空间：青蓝→青白→电光蓝字内流动，轻快波浪（慢动作数字空间感）
         register(HYPER_SPACE, FancyTextStyle.builder(0x00BBFF)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0x00BBFF, 0x88FFFF, 0x4488FF}, 3.0, 0.7))
                 .effect(FancyTextEffects.wave(0.8F, 0.8, 20.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF0051525, 0x5044CCFF, 0x502277CC))
                 .build());
 
-        // 霓虹脉冲：品红→电青→紫字内流动，伴随细微随机闪烁（赛博霓虹感）
         register(NEON_PULSE, FancyTextStyle.builder(0xFF2288)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0xFF2288, 0x00EEFF, 0xAA44FF}, 3.0, 0.75))
                 .effect(FancyTextEffects.flicker(0x9999L, 0.25F, 2.5))
                 .tooltipBackground(TooltipBackground.gradient(0xF01A0A1A, 0xF00A1A1A, 0x50FF44AA, 0x5044CCFF))
                 .build());
 
-        // 星辉：淡蓝主体，白色条带缓慢扫过，整体轻柔浮起（星光流转）
         register(STARLIGHT, FancyTextStyle.builder(0x88BBFF)
                 .effect(FancyTextEffects.stripeSweep(0xFFFFFF, 10.0F, 7.0F, 16.0F, true))
                 .effect(FancyTextEffects.floatEffect(1.0F, 0.5, FancyTextEffects.FloatMode.ALL))
                 .tooltipBackground(TooltipBackground.solid(0xF00A1025, 0x5088BBFF, 0x504477AA))
                 .build());
 
-        // 梦境交织：樱粉→淡紫→天蓝三色字内流动，轻柔波浪
         register(DREAM_WEAVE, FancyTextStyle.builder(0xFF88CC)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0xFF88CC, 0xBB88FF, 0x88CCFF}, 3.0, 0.5))
                 .effect(FancyTextEffects.wave(1.2F, 0.55, 22.0F))
                 .tooltipBackground(TooltipBackground.gradient(0xF0200A20, 0xF0100A25, 0x50FF88CC, 0x508888FF))
                 .build());
 
-        // 翡翠辉光：墨绿→翡翠绿→碧青字内流动，字符轻柔起伏
         register(EMERALD_GLOW, FancyTextStyle.builder(0x00AA66)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0x008855, 0x22DD88, 0x66FFCC}, 3.0, 0.55))
                 .effect(FancyTextEffects.wave(1.0F, 0.5, 22.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF0051F15, 0x5022DD88, 0x50118855))
                 .build());
 
-        // 紫晶：深紫→亮紫→淡紫字内流动，舒缓波浪
         register(AMETHYST, FancyTextStyle.builder(0x7733CC)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0x6622AA, 0xAA66FF, 0xDDAAFF}, 3.0, 0.5))
                 .effect(FancyTextEffects.wave(1.0F, 0.45, 24.0F))
                 .tooltipBackground(TooltipBackground.gradient(0xF0150525, 0xF00A0520, 0x50AA66FF, 0x506633AA))
                 .build());
 
-        // 月华：淡蓝主体向月白缓慢呼吸，整体轻柔浮起
         register(MOONLIGHT, FancyTextStyle.builder(0xAACCFF)
                 .effect(FancyTextEffects.pulse(0xFFFFEE, 0.35, 0.1F))
                 .effect(FancyTextEffects.floatEffect(1.0F, 0.3, FancyTextEffects.FloatMode.ALL))
                 .tooltipBackground(TooltipBackground.solid(0xF0101828, 0x50AACCFF, 0x505577AA))
                 .build());
 
-        // 深渊：蓝紫深色调字内流动 + 透明度呼吸（深海/虚空凝视感，星空背景）
         register(ABYSS, FancyTextStyle.builder(0x3344AA)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0x334499, 0x6655CC, 0x4477BB}, 3.5, 0.4))
                 .effect(FancyTextEffects.alphaPulse(0.35, 0.6F))
                 .tooltipBackground(TooltipBackground.starrySky(StarfieldConfig.DEFAULT))
                 .build());
 
-        // 熔核：暗红→熔橙→亮金字内流动，字符快速起伏（岩浆翻涌感）
         register(LAVA_CORE, FancyTextStyle.builder(0xCC3300)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0xDD2200, 0xFF7700, 0xFFCC33}, 3.0, 0.6))
                 .effect(FancyTextEffects.wave(1.5F, 1.3, 12.0F))
                 .tooltipBackground(TooltipBackground.gradient(0xF02A0A00, 0xF0150500, 0x50FF6611, 0x50882200))
                 .build());
 
-        // 蝶舞：品紫→玫红→堇紫字内流动，字符大幅起伏（蝶翼翻飞感）
         register(BUTTERFLY_DANCE, FancyTextStyle.builder(0xDD66FF)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0xCC55EE, 0xFF77BB, 0x9966FF}, 3.0, 0.55))
                 .effect(FancyTextEffects.wave(1.5F, 0.7, 18.0F))
                 .tooltipBackground(TooltipBackground.gradient(0xF0200520, 0xF0150515, 0x50DD66FF, 0x50FF77BB))
                 .build());
 
-        // 星夜：青白→冰蓝字内流动 + 流动星空背景（星空标题专用）
         register(STARRY_NIGHT, FancyTextStyle.builder(0xDDEEFF)
                 .effect(FancyTextEffects.flowingGradient(new int[]{0xFFFFFF, 0x88CCFF, 0x4488FF}, 3.0, 0.5))
                 .effect(FancyTextEffects.wave(0.8F, 0.4, 24.0F))
                 .tooltipBackground(TooltipBackground.starrySky(StarfieldConfig.COOL_WHITE))
                 .build());
 
-        // ==================== 生命之织缕契约专属 ====================
-
-        // 生命织缕（门面专属）：翠绿主体，金色丝线条带自右向左扫过，条带处上浮——织缕之丝流过
         register(LIFE_THREAD, FancyTextStyle.builder(0x2FBF4F)
                 .effect(FancyTextEffects.stripeSweep(0xFFD700, 12.0F, 8.0F, 22.0F, true))
                 .effect(FancyTextEffects.floatEffect(1.5F, 0.5, FancyTextEffects.FloatMode.HIGHLIGHT_ONLY))
                 .tooltipBackground(TooltipBackground.solid(0xF00A1F0A, 0x50FFD700, 0x502FBF4F))
                 .build());
 
-        // 代价渐变（索取正文专属）：深绿→中绿→深绿位置静态渐变，无位移，庄重压抑
         register(PRICE_GRADIENT, FancyTextStyle.builder(0x1F7A2E)
                 .effect(FancyTextEffects.gradient(new int[]{0x1F7A2E, 0x3BA351, 0x1F7A2E}, false, 0.0))
                 .tooltipBackground(TooltipBackground.solid(0xF0051505, 0x501F7A2E, 0x500F4518))
                 .build());
 
-        // 翠玉脉动（索取头/前缀专属）：深绿向亮绿缓慢呼吸，字符参差波浪
         register(JADE_PULSE, FancyTextStyle.builder(0x1F8A38)
                 .effect(FancyTextEffects.pulse(0x55DD77, 0.35, 0.2F))
                 .effect(FancyTextEffects.wave(1.0F, 0.3, 24.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF0051505, 0x5055DD77, 0x501F8A38))
                 .build());
 
-        // 生命潮汐（馈赠正文专属）：绿→青绿→嫩绿整行滚动色带，缓缓流动
         register(LIFE_TIDE, FancyTextStyle.builder(0x33CC55)
                 .effect(FancyTextEffects.gradient(new int[]{0x33CC55, 0x54E0C8, 0xA6F25E}, true, 0.08))
                 .tooltipBackground(TooltipBackground.gradient(0xF005150A, 0xF0051A15, 0x5054E0C8, 0x5033CC55))
                 .build());
 
-        // ==================== 渴求之器具契约专属 ====================
-        // 统一背景：深紫黑底 + 灿金上边框 + 暗金下边框（虚境幽邃中的金属光泽）
-
-        // 渴求之器具（门面专属）：暗金主体，灿金条带自右向左扫过，条带处上浮——金属贪欲的辉光
         register(YEARNING_VESSEL, FancyTextStyle.builder(0xCC8800)
                 .effect(FancyTextEffects.stripeSweep(0xFFD700, 12.0F, 8.0F, 22.0F, true))
                 .effect(FancyTextEffects.floatEffect(1.5F, 0.5, FancyTextEffects.FloatMode.HIGHLIGHT_ONLY))
                 .tooltipBackground(TooltipBackground.solid(0xF0140819, 0x50FFD700, 0x50804A00))
                 .build());
 
-        // 赤金脉动（索取头专属）：赤金主体向亮金橙呼吸，字符参差波浪——饥渴的灼热
         register(CRIMSON_GOLD, FancyTextStyle.builder(0xB8541A)
                 .effect(FancyTextEffects.pulse(0xFFAA33, 0.35, 0.2F))
                 .effect(FancyTextEffects.wave(1.0F, 0.3, 24.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF0140819, 0x50FFD700, 0x50804A00))
                 .build());
 
-        // 饥渴渐变（索取正文专属）：赤金位置静态渐变，无位移，庄重压抑
         register(HUNGER_GRADIENT, FancyTextStyle.builder(0x9C5A1E)
                 .effect(FancyTextEffects.gradient(new int[]{0x9C5A1E, 0xC97A2E, 0x9C5A1E}, false, 0.0))
                 .tooltipBackground(TooltipBackground.solid(0xF0140819, 0x50FFD700, 0x50804A00))
                 .build());
 
-        // 藍金潮汐（馈赠专属）：蓝→淡蓝→青整行滚动色带，缓缓流动——名望与垂幸的冷辉
         register(AZURE_GOLD, FancyTextStyle.builder(0x4488CC)
                 .effect(FancyTextEffects.gradient(new int[]{0x4466BB, 0x77AAEE, 0x33CCFF}, true, 0.08))
                 .tooltipBackground(TooltipBackground.solid(0xF0140819, 0x50FFD700, 0x50804A00))
                 .build());
 
-        // ==================== 魂灵之月窠契约专属 ====================
-        // 统一背景：深冥夜蓝黑底 + 月银辉光上边框 + 幽蓝下边框（渊月夜空）
-
-        // 魂灵之月窠（门面专属）：月蓝主体，银白条带自右向左扫过，条带处上浮——渊月银辉流过
         register(SOUL_MOON_NEST, FancyTextStyle.builder(0x8899DD)
                 .effect(FancyTextEffects.stripeSweep(0xEEF4FF, 12.0F, 8.0F, 22.0F, true))
                 .effect(FancyTextEffects.floatEffect(1.5F, 0.5, FancyTextEffects.FloatMode.HIGHLIGHT_ONLY))
                 .tooltipBackground(TooltipBackground.solid(0xF00B1026, 0x50AABBEE, 0x504455AA))
                 .build());
 
-        // 幽蓝脉动（索取头专属）：深靛蓝主体向月蓝呼吸，字符参差波浪——魂识被拖拽的幽颤
         register(SOUL_PULSE, FancyTextStyle.builder(0x3D4488)
                 .effect(FancyTextEffects.pulse(0x8899DD, 0.35, 0.2F))
                 .effect(FancyTextEffects.wave(1.0F, 0.3, 24.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF00B1026, 0x50AABBEE, 0x504455AA))
                 .build());
 
-        // 魂寂渐变（索取正文专属）：深靛蓝位置静态渐变，无位移，庄重压抑
         register(SOUL_PRICE, FancyTextStyle.builder(0x2A2E66)
                 .effect(FancyTextEffects.gradient(new int[]{0x2A2E66, 0x465099, 0x2A2E66}, false, 0.0))
                 .tooltipBackground(TooltipBackground.solid(0xF00B1026, 0x50AABBEE, 0x504455AA))
                 .build());
 
-        // 魂青潮汐（馈赠专属）：魂青→月白→淡紫整行滚动色带，缓缓流动——渊月权能垂落
         register(SOUL_TIDE, FancyTextStyle.builder(0x66AAEE)
                 .effect(FancyTextEffects.gradient(new int[]{0x5599DD, 0x99CCFF, 0xAAA0FF}, true, 0.08))
                 .tooltipBackground(TooltipBackground.solid(0xF00B1026, 0x50AABBEE, 0x504455AA))
                 .build());
 
-        // ==================== 世界之喰煞契约专属 ====================
-        // 统一背景：深渊黑红底 + 血红上边框 + 暗红下边框（吞噬巨口中的猩红獠影）
-        // 配色定调：猩红主体 + 亮金獠牙扫光 —— 与生命之织缕（绿金）、魂灵之月窠（蓝紫）区分
-
-        // 世界之喰煞（门面专属）：猩红主体，亮金条带自右向左扫过，条带处上浮——巨口开阖，金牙掠过血色之影
         register(WORLD_DEVOURER, FancyTextStyle.builder(0x8B1A1A)
                 .effect(FancyTextEffects.stripeSweep(0xFFD700, 12.0F, 8.0F, 20.0F, true))
                 .effect(FancyTextEffects.floatEffect(1.5F, 0.5, FancyTextEffects.FloatMode.HIGHLIGHT_ONLY))
                 .tooltipBackground(TooltipBackground.solid(0xF0140505, 0x50FF3333, 0x50641E1E))
                 .build());
 
-        // 噬欲脉动（索取头专属）：血红主体向亮橙红呼吸，字符参差波浪——吞噬汲取生机的搏动
         register(DEVOURER_MAW, FancyTextStyle.builder(0xB22222)
                 .effect(FancyTextEffects.pulse(0xFF6B4A, 0.35, 0.2F))
                 .effect(FancyTextEffects.wave(1.0F, 0.3, 24.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF0140505, 0x50FF3333, 0x50641E1E))
                 .build());
 
-        // 噬生潮汐（索取正文专属）：暗红→血橙→暗紫红整行滚动色带，缓缓流动——掠夺的生机入腹流转
         register(DEVOURER_TIDE, FancyTextStyle.builder(0xCC4433)
                 .effect(FancyTextEffects.gradient(new int[]{0x8B1A1A, 0xEE6644, 0x9A3355}, true, 0.08))
                 .tooltipBackground(TooltipBackground.solid(0xF0140505, 0x50FF3333, 0x50641E1E))
                 .build());
 
-        // 灭世渐变（馈赠正文专属）：亮猩红→灼亮血红→亮猩红位置静态渐变，无位移，庄重但可读——灭世血咒烙印
         register(APOCALYPSE_GRADIENT, FancyTextStyle.builder(0xC84848)
                 .effect(FancyTextEffects.gradient(new int[]{0xA83232, 0xE87070, 0xA83232}, false, 0.0))
                 .tooltipBackground(TooltipBackground.solid(0xF0140505, 0x50FF3333, 0x50641E1E))
                 .build());
 
-        // ==================== 轮回之终末契约专属 ====================
-        // 统一背景：灰烬黑紫底 + 褪金上边框 + 灰紫下边框（沙漏流尽前的最后余晖）
-        // 配色定调：褪金惨白主体 + 时光白扫光 —— 与魂灵之月窠（蓝紫）、世界之喰煞（猩红金）区分
-
-        // 轮回之终末（门面专属）：褪金主体，惨白条带自右向左扫过，条带处上浮——沙漏将尽的最后光辉
         register(SAMSARA_END, FancyTextStyle.builder(0xC9B86A)
                 .effect(FancyTextEffects.stripeSweep(0xFFF6DC, 12.0F, 8.0F, 22.0F, true))
                 .effect(FancyTextEffects.floatEffect(1.5F, 0.5, FancyTextEffects.FloatMode.HIGHLIGHT_ONLY))
                 .tooltipBackground(TooltipBackground.solid(0xF014111A, 0x50C9B86A, 0x50665A88))
                 .build());
 
-        // 终末刻脉动（索取头/倒计时头专属）：暗金向亮金呼吸，字符参差波浪——沙粒坠落的搏动
         register(SAMSARA_TICK, FancyTextStyle.builder(0x8A7530)
                 .effect(FancyTextEffects.pulse(0xFFE9A0, 0.35, 0.2F))
                 .effect(FancyTextEffects.wave(1.0F, 0.3, 24.0F))
                 .tooltipBackground(TooltipBackground.solid(0xF014111A, 0x50C9B86A, 0x50665A88))
                 .build());
 
-        // 寂灭渐变（索取正文专属）：灰紫位置静态渐变，无位移，庄重压抑——终末的阴影
         register(SAMSARA_PRICE, FancyTextStyle.builder(0x5A5270)
                 .effect(FancyTextEffects.gradient(new int[]{0x4A4358, 0x6B6280, 0x4A4358}, false, 0.0))
                 .tooltipBackground(TooltipBackground.solid(0xF014111A, 0x50C9B86A, 0x50665A88))
                 .build());
 
-        // 流沙潮汐（馈赠正文专属）：惨白→褪金→灰紫整行滚动色带，缓缓流动——时光流沙
         register(SAMSARA_TIDE, FancyTextStyle.builder(0xD9CFA8)
                 .effect(FancyTextEffects.gradient(new int[]{0xE8E0C8, 0xC9B86A, 0x8A8298}, true, 0.08))
                 .tooltipBackground(TooltipBackground.solid(0xF014111A, 0x50C9B86A, 0x50665A88))

@@ -1,12 +1,6 @@
 package com.icylib.fancytext;
 
-/**
- * Tooltip 背景线程持有者（渲染线程内传递）。
- *
- * 在 {@link FancyTextTooltipEvents#onItemTooltip} 中设置，
- * 在 {@link com.icylib.mixin.TooltipBackgroundMixin} 渲染时读取，
- * 渲染结束后由 mixin 的 RETURN 注入清除。
- */
+/** Tooltip 背景线程持有者：ItemTooltipEvent 写入、渲染时读取、RETURN 时清除。 */
 public final class TooltipBackgroundHolder {
 
     private static final ThreadLocal<TooltipBackground> HOLDER = new ThreadLocal<>();

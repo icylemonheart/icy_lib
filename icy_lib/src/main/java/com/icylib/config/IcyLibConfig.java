@@ -4,24 +4,18 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
  * icy_lib 通用配置（防御 / 移动）。
- * icy_lib general config (defense / movement).
  */
 public class IcyLibConfig {
     public static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
     public static final ModConfigSpec SPEC;
 
-    /** 完全抵御伤害时是否取消受击动画 / Whether to cancel the hurt animation when damage is fully negated. */
     public static final ModConfigSpec.BooleanValue CANCEL_HIT_ANIMATION_WHEN_NO_DAMAGE;
 
-    /** 怪物默认防御 = 最大生命 × 此系数 / Monster default defense = max health × this multiplier. */
     public static final ModConfigSpec.DoubleValue MONSTER_DEFENSE_MULTIPLIER;
-    /** 怪物默认会心防御 = 护甲 × 此系数 / Monster default critical defense = armor × this multiplier. */
     public static final ModConfigSpec.DoubleValue MONSTER_CRITICAL_DEFENSE_MULTIPLIER;
 
-    /** 是否让抗性/防御对直接 setHealth 的穿透扣血生效 / Whether resistance & defense apply to setHealth bypass damage. */
     public static final ModConfigSpec.BooleanValue SET_HEALTH_DEFENSE_ENABLED;
 
-    /** 玩家移动速度表现上限 / Player movement speed display cap. */
     public static final ModConfigSpec.DoubleValue PLAYER_SPEED_CAP;
 
     static {

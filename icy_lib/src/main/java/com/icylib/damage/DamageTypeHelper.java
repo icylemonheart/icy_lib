@@ -13,8 +13,7 @@ import net.minecraft.world.entity.LivingEntity;
 import java.util.Set;
 
 /**
- * 核心伤害类型判断逻辑。
- * 1.21.1 中 DamageSource.getMsgId() 已移除，改用 source.type().msgId()。
+ * 伤害类型判定：基于 source.type().msgId()（1.21.1 已移除 getMsgId()）。
  */
 public class DamageTypeHelper {
 
@@ -74,7 +73,6 @@ public class DamageTypeHelper {
             "icy_void"
     );
 
-    /** 获取伤害的 message_id（1.21.1 中 getMsgId() 已移除） */
     private static String getMsgId(DamageSource source) {
         return source.type().msgId();
     }
@@ -196,9 +194,6 @@ public class DamageTypeHelper {
         }
     }
 
-    /**
-     * 根据伤害类型键创建伤害源
-     */
     public static DamageSource createDamageSource(LivingEntity attacker, ResourceKey<DamageType> damageTypeKey) {
         if (attacker == null || attacker.level().isClientSide()) {
             return null;

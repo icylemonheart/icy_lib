@@ -8,10 +8,14 @@ A core library mod for Minecraft NeoForge 1.21.1 providing utilities and attribu
 - **Attributes System**: Critical strike, defense, critical strike defense and resistance attributes
 - **Quality System**: Rank-based item slot background and tooltip rendering with per-rank gradient colors
 - **Fancy Text Tooltips**: Rich text tooltip effects, including custom backgrounds and fonts
-- **Shield System**: Shield management with HUD display
+- **Defense System**: Layered defense framework where shields (SHIELD) are drained before armor (ARMOR), with extensible layer priorities and bypass hooks
+- **Shield / Armor System**: Shield and armor management with HUD display
+- **Dodge System**: Generic perfect-dodge window API — cancels incoming living-attacker damage during the window and fires a callback
+- **Player Upgrade System**: Level, EXP, nuts and promotion stages (Private → Hero) with per-stage attribute values, plus skill points
+- **Network Layer**: Serverbound/clientbound payloads for player upgrade actions and client-side upgrade cache sync
 - **Effects**: Various effects including Rage, Scorching, Electrocution, Piercing, Corrosion, Fortitude, Hyper Calculation Space, and Catherine Shield
 - **Upgrade System**: Framework for item upgrading and breakthrough
-- **Menu System**: Upgrade and recycle menus
+- **Menu System**: Upgrade and recycle menus, shared GUI widgets and style presets
 - **Migration Protection API**: Keeps downstream `ADD_MULTIPLIED_TOTAL` modifiers in the independent multiply zone
 
 ## Requirements

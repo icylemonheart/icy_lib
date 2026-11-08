@@ -3,29 +3,27 @@ package com.icylib.client;
 import com.icylib.client.menu.RecycleMenuScreen;
 import com.icylib.client.menu.UpgradeMenuScreen;
 import com.icylib.init.ModMenuTypes;
+import com.icylib.menu.UpgradeMenu;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
-/**
- * 客户端侧初始化类。
- *
- * 仅在客户端被 {@link com.icylib.IcyLib} 通过 {@code FMLEnvironment.dist.isClient()} 守卫加载，
- * 因此本类可自由引用客户端专属 API（如 Screen 子类）。
- *
- * NeoForge 1.21.1 中 {@code MenuScreens.register} 已标记为 @Deprecated 且 private，
- * 改用 {@link RegisterMenuScreensEvent}（MOD 总线事件）注册屏幕工厂。
- */
+// 客户端初始化：菜单屏幕须经 RegisterMenuScreensEvent 注册；升级界面为全屏布局
 @OnlyIn(Dist.CLIENT)
 public class IcyLibClient {
 
-    /**
-     * 由 IcyLib 主类在客户端环境调用，注册 MOD 总线事件监听器。
-     */
     public static void registerClient(IEventBus modBus) {
         modBus.addListener(IcyLibClient::onRegisterMenuScreens);
+        NeoForge.EVENT_BUS.register(PlayerUpgradeSubmitHandler.class);
+        NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
+            var window = Minecraft.getInstance().getWindow();
+            UpgradeMenu.setClientScreenSize(window.getGuiScaledWidth(), window.getGuiScaledHeight());
+        });
     }
 
     @SubscribeEvent

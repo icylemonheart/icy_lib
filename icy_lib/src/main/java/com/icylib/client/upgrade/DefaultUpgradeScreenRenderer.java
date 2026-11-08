@@ -4,11 +4,14 @@ import com.icylib.menu.UpgradeMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 
+/** 默认升级界面背景（全屏竖直渐变），可通过 UpgradeScreenRendererManager 替换。 */
 public class DefaultUpgradeScreenRenderer implements IUpgradeScreenRenderer {
+    private static final int COLOR_TOP = 0xCC0A0F14;
+    private static final int COLOR_BOTTOM = 0xE0141A21;
+
     @Override
     public void renderBackground(GuiGraphics guiGraphics, int x, int y, int width, int height, float partialTick) {
-        guiGraphics.fill(x, y, x + width, y + height, 0x80000000);
-        guiGraphics.fill(x + 54, y + 50, x + width - 8, y + height - 60, 0x40404040);
+        guiGraphics.fillGradient(x, y, x + width, y + height, COLOR_TOP, COLOR_BOTTOM);
     }
 
     @Override

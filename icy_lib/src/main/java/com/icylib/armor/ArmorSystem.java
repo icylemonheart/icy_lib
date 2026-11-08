@@ -11,10 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 护甲系统 —— icy_lib 通用护甲层。
- *
- * 伤害优先级：由 {@link com.icylib.defense.DefenseSystemManager} 调度，
- * 护盾（SHIELD）优先被消耗，护盾耗尽后护甲（ARMOR）承受剩余伤害。
+ * 护甲层：护盾耗尽后承受剩余伤害，由 DefenseSystemManager 按 priority 调度。
  */
 public class ArmorSystem implements DefenseLayer {
 
@@ -30,7 +27,6 @@ public class ArmorSystem implements DefenseLayer {
         float current = playerArmors.getOrDefault(uuid, 0.0f);
         float max = playerMaxArmors.getOrDefault(uuid, 0.0f);
         float newArmor = current + amount;
-        // 若新增护甲超过当前 max，更新 max
         if (newArmor > max) {
             playerMaxArmors.put(uuid, newArmor);
             max = newArmor;
@@ -42,7 +38,6 @@ public class ArmorSystem implements DefenseLayer {
     public static void setArmor(Player player, float amount) {
         UUID uuid = player.getUUID();
         float max = playerMaxArmors.getOrDefault(uuid, 0.0f);
-        // 先更新最大值（若 amount 超过当前 max），再钳制护甲值
         if (amount > max) {
             playerMaxArmors.put(uuid, amount);
             max = amount;
@@ -98,8 +93,6 @@ public class ArmorSystem implements DefenseLayer {
         playerArmors.remove(uuid);
         playerMaxArmors.remove(uuid);
     }
-
-    // ===== DefenseLayer 接口实现 =====
 
     @Override
     public DefenseLayerType getType() {

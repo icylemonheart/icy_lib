@@ -11,11 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 护盾系统 —— icy_lib 通用护盾层。
- *
- * 伤害吸收逻辑已迁移至 {@link com.icylib.defense.DefenseSystemManager}，
- * 本类仅负责数据存储与生命周期管理，并实现 {@link DefenseLayer} 接口
- * 供调度器统一调用。
+ * 护盾层：最先被消耗的防御层，本类只负责数据存储与生命周期。
  */
 public class ShieldSystem implements DefenseLayer {
 
@@ -31,7 +27,6 @@ public class ShieldSystem implements DefenseLayer {
         float current = playerShields.getOrDefault(uuid, 0.0f);
         float max = playerMaxShields.getOrDefault(uuid, 0.0f);
         float newShield = current + amount;
-        // 若新增护盾超过当前 max，更新 max
         if (newShield > max) {
             playerMaxShields.put(uuid, newShield);
             max = newShield;
@@ -43,7 +38,6 @@ public class ShieldSystem implements DefenseLayer {
     public static void setShield(Player player, float amount) {
         UUID uuid = player.getUUID();
         float max = playerMaxShields.getOrDefault(uuid, 0.0f);
-        // 先更新最大值（若 amount 超过当前 max），再钳制护盾值
         if (amount > max) {
             playerMaxShields.put(uuid, amount);
             max = amount;
@@ -99,8 +93,6 @@ public class ShieldSystem implements DefenseLayer {
         playerShields.remove(uuid);
         playerMaxShields.remove(uuid);
     }
-
-    // ===== DefenseLayer 接口实现 =====
 
     @Override
     public DefenseLayerType getType() {

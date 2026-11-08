@@ -5,24 +5,13 @@ import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.Random;
 
-/**
- * 程序化星空背景渲染器。
- *
- * 在指定矩形内绘制：深色渐变底色 + 确定性分布的星点（闪烁 + 横向漂移）。
- * 星点位置由 {@link StarfieldConfig#seed} 固定，保证每帧布局一致、仅动画变化。
- *
- * 所有绘制使用带 z 参数的 fill/fillGradient，与原版 tooltip 背景的 z 层级一致。
- */
+/** 程序化星空背景渲染器：星点布局由 seed 固定，闪烁与漂移随时间变化。 */
 public final class StarfieldRenderer {
 
     private StarfieldRenderer() {
     }
 
-    /**
-     * 渲染星空背景（含底色渐变与星点）。
-     *
-     * @param z 绘制层级（原版 tooltip 背景传 400）
-     */
+    /** 渲染星空背景；z 为绘制层级（原版 tooltip 背景传 400）。 */
     public static void render(GuiGraphics graphics, int x1, int y1, int x2, int y2, int z,
                               TooltipBackground background) {
         StarfieldConfig cfg = background.starfield();
@@ -36,10 +25,8 @@ public final class StarfieldRenderer {
             return;
         }
 
-        // 1. 底色垂直渐变（带 z）
         graphics.fillGradient(x1, y1, x2, y2, z, background.bgTop(), background.bgBottom());
 
-        // 2. 星点
         double time = Util.getMillis() / 1000.0;
         Random random = new Random(cfg.seed());
         int count = Math.max(1, cfg.starCount());
@@ -52,9 +39,8 @@ public final class StarfieldRenderer {
             float baseY = random.nextFloat() * h;
             float size = minSize + random.nextFloat() * sizeRange;
             float phase = random.nextFloat() * (float) Math.PI * 2.0F;
-            float speedFactor = 0.5F + random.nextFloat(); // 每颗星速度/相位略有差异
+            float speedFactor = 0.5F + random.nextFloat();
 
-            // 横向漂移（循环回绕）
             float drift = (float) ((time * cfg.driftSpeed() * speedFactor) % w);
             if (drift < 0) {
                 drift += w;
@@ -66,7 +52,6 @@ public final class StarfieldRenderer {
             int py = y1 + (int) baseY;
             int s = Math.max(1, (int) size);
 
-            // 闪烁：tw 在 [-1, 1]，brightness 在 [1-amount, 1]
             double tw = Math.sin(time * twinkleRad * speedFactor + phase);
             float brightness = 1.0F - cfg.twinkleAmount() * (float) (tw * 0.5 + 0.5);
             if (brightness <= 0.02F) {

@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 坚韧效果 - 免疫击退，每秒移除所有负面效果
+ * 坚韧：免疫击退，每秒移除所有负面效果。
  */
 public class FortitudeEffect extends MobEffect {
 

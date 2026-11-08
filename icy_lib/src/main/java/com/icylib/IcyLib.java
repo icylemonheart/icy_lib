@@ -5,17 +5,21 @@ import com.icylib.client.IcyLibClient;
 import com.icylib.config.IcyLibConfig;
 import com.icylib.config.MultiplyMigrationConfig;
 import com.icylib.defense.DefenseSystemManager;
+import com.icylib.dodge.DodgeEventHandler;
 import com.icylib.event.CriticalStrikeEventHandler;
 import com.icylib.event.DefenseEventHandler;
 import com.icylib.event.MultiplyTotalMigrationHandler;
+import com.icylib.event.PlayerUpgradeEventHandler;
 import com.icylib.init.ModAttributes;
 import com.icylib.init.ModEffects;
 import com.icylib.init.ModMenuTypes;
 import com.icylib.init.ModUpgradeItems;
+import com.icylib.network.PlayerUpgradeNetworkHandler;
 import com.icylib.shield.ShieldSystem;
 import com.mojang.logging.LogUtils;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,6 +30,7 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -40,7 +45,6 @@ public class IcyLib {
     public static List<com.icylib.upgrade.ExpItem> EXP_ITEMS = new ArrayList<>();
 
     public IcyLib(IEventBus bus, ModContainer modContainer) {
-        // 所有 icy 系列模组的配置文件统一放在 config/icy/ 目录下，便于管理和迁移
         modContainer.registerConfig(ModConfig.Type.COMMON, IcyLibConfig.SPEC, "icy/icy_lib-common.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, MultiplyMigrationConfig.SPEC, "icy/multiply_migration.toml");
 
@@ -55,19 +59,19 @@ public class IcyLib {
         NeoForge.EVENT_BUS.register(new CriticalStrikeEventHandler());
         NeoForge.EVENT_BUS.register(new DefenseEventHandler());
         NeoForge.EVENT_BUS.register(new MultiplyTotalMigrationHandler());
+        NeoForge.EVENT_BUS.register(new DodgeEventHandler());
+        NeoForge.EVENT_BUS.register(new PlayerUpgradeEventHandler());
 
-        // 显式注册防御系统核心类，确保 @SubscribeEvent 静态方法被正确调用
-        // register() 会触发类加载，从而执行 DefenseSystemManager 的静态初始化块注册防御层
+        // 注册静态类以触发类加载，从而注册默认防御层
         NeoForge.EVENT_BUS.register(DefenseSystemManager.class);
         NeoForge.EVENT_BUS.register(ShieldSystem.class);
         NeoForge.EVENT_BUS.register(ArmorSystem.class);
 
-        // 客户端侧初始化：仅在客户端加载 IcyLibClient，避免服务端引用客户端类
         if (FMLEnvironment.dist.isClient()) {
             IcyLibClient.registerClient(bus);
-            // 注册 FancyText tooltip 事件监听器（ItemTooltipEvent + RenderTooltipEvent.Color）
             NeoForge.EVENT_BUS.register(com.icylib.fancytext.FancyTextTooltipEvents.class);
             NeoForge.EVENT_BUS.register(com.icylib.quality.QualityTooltipEvents.class);
+            NeoForge.EVENT_BUS.register(com.icylib.client.HyperSpaceOverlay.class);
         }
     }
 

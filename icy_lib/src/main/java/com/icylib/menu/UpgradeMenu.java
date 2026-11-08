@@ -1,8 +1,19 @@
 package com.icylib.menu;
 
 import com.icylib.init.ModMenuTypes;
+import com.icylib.network.PlayerUpgradeNetworkHandler;
 import com.icylib.upgrade.AwarenessUpgradeManager;
 import com.icylib.upgrade.IUpgradeableItem;
+import com.icylib.upgrade.ISkillWeapon;
+import com.icylib.upgrade.PlayerUpgradeAttributes;
+import com.icylib.upgrade.PlayerUpgradeData;
+import com.icylib.upgrade.PlayerUpgradeItems;
+import com.icylib.upgrade.UpgradeLayout;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,18 +23,26 @@ import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.ArrayList;
 import java.util.List;
 
+/** 升级/突破菜单（全屏）：材料直接从背包读取消耗，中央槽（索引 0）放待升级物品或可提交资源。 */
 public class UpgradeMenu extends AbstractContainerMenu {
-    private final SimpleContainer upgradeContainer;
-    private final SimpleContainer materialsContainer;
-    private final Player player;
-
+    public final Player player;
+    public final SimpleContainer upgradeContainer;
     private final DataSlot experience;
     private final DataSlot expCost;
     private final DataSlot breakthroughCost;
     private boolean isProcessingSlotsChanged = false;
+
+    private final UpgradeLayout layout;
+
+    private static int clientGuiWidth = 320;
+    private static int clientGuiHeight = 240;
+
+    public static void setClientScreenSize(int width, int height) {
+        clientGuiWidth = width;
+        clientGuiHeight = height;
+    }
 
     public int getExpCost() {
         return expCost.get();
@@ -33,242 +52,269 @@ public class UpgradeMenu extends AbstractContainerMenu {
         return breakthroughCost.get();
     }
 
+    public UpgradeLayout getLayout() {
+        return layout;
+    }
+
     public UpgradeMenu(int id, Inventory playerInventory) {
         super(ModMenuTypes.UPGRADE_MENU.get(), id);
         this.player = playerInventory.player;
-        this.upgradeContainer = new SimpleContainer(1);
-        this.materialsContainer = new SimpleContainer(9);
+        // 必须重写 setChanged，否则中央槽自动结算不触发
+        this.upgradeContainer = new SimpleContainer(1) {
+            @Override
+            public void setChanged() {
+                super.setChanged();
+                UpgradeMenu.this.slotsChanged(this);
+            }
+        };
 
-        addSlot(new Slot(upgradeContainer, 0, 162, 20) {
+        boolean clientSide = playerInventory.player.level().isClientSide;
+        this.layout = UpgradeLayout.compute(clientSide ? clientGuiWidth : 320, clientSide ? clientGuiHeight : 240);
+
+        addSlot(new Slot(upgradeContainer, 0, layout.itemX, layout.itemY) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return stack.getItem() instanceof IUpgradeableItem;
+                return stack.getItem() instanceof IUpgradeableItem || PlayerUpgradeItems.isSubmittable(stack);
             }
 
             @Override
-            public void set(ItemStack stack) {
-                super.set(stack);
-                if (!player.level().isClientSide) {
-                    updateCosts();
-                }
+            public boolean mayPickup(Player player) {
+                return true;
             }
         });
 
         for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                int idx = i * 3 + j;
-                addSlot(new Slot(materialsContainer, idx, 8 + j * 18, 60 + i * 18) {
-                    @Override
-                    public boolean mayPlace(ItemStack stack) {
-                        return isValidBreakthroughMaterial(stack);
-                    }
-
-                    @Override
-                    public int getMaxStackSize() {
-                        return 64;
-                    }
-                });
-            }
-        }
-
-        for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 9; j++) {
-                addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 142 + i * 18));
+                addSlot(new Slot(playerInventory, j + i * 9 + 9,
+                        layout.invX + j * UpgradeLayout.SLOT, layout.invMainY + i * UpgradeLayout.SLOT));
             }
         }
         for (int k = 0; k < 9; k++) {
-            addSlot(new Slot(playerInventory, k, 8 + k * 18, 200));
+            addSlot(new Slot(playerInventory, k, layout.invX + k * UpgradeLayout.SLOT, layout.hotbarY));
         }
 
-        this.experience = DataSlot.standalone();
-        this.expCost = DataSlot.standalone();
-        this.breakthroughCost = DataSlot.standalone();
-        addDataSlot(this.experience);
-        addDataSlot(this.expCost);
-        addDataSlot(this.breakthroughCost);
+        experience = DataSlot.standalone();
+        expCost = DataSlot.standalone();
+        breakthroughCost = DataSlot.standalone();
+        addDataSlot(experience);
+        addDataSlot(expCost);
+        addDataSlot(breakthroughCost);
 
-        this.experience.set(getPlayerExp());
-        updateCosts();
-    }
-
-    private void updateCosts() {
-        ItemStack stack = upgradeContainer.getItem(0);
-        int ec = 0;
-        int breakthroughCost = 0;
-
-        if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
-            var opt = upgradeable.getUpgradeStats(stack);
-            if (opt.isPresent()) {
-                var stats = opt.get();
-                if (!upgradeable.upgradeWithMaterials() && AwarenessUpgradeManager.canUpgrade(stats)) {
-                    ec = AwarenessUpgradeManager.getExpForLevel(stats, stats.level);
-                }
-                if (AwarenessUpgradeManager.canBreakthrough(stats)) {
-                    breakthroughCost = 1;
-                }
-            }
-        }
-
-        this.expCost.set(ec);
-        this.breakthroughCost.set(breakthroughCost);
-    }
-
-    private boolean isValidBreakthroughMaterial(ItemStack stack) {
-        ItemStack upgradeItem = upgradeContainer.getItem(0);
-        if (upgradeItem.isEmpty() || !(upgradeItem.getItem() instanceof IUpgradeableItem upgradeable)) {
-            return false;
-        }
-        for (ItemStack requiredStack : upgradeable.getUpgradeMaterials(upgradeItem)) {
-            if (ItemStack.isSameItemSameComponents(stack, requiredStack)) {
-                return true;
-            }
-        }
-        return upgradeable.getUpgradeStats(upgradeItem).map(stats -> {
-            List<ItemStack> required = upgradeable.getBreakthroughMaterials(upgradeItem, stats.stage);
-            for (ItemStack requiredStack : required) {
-                if (ItemStack.isSameItemSameComponents(stack, requiredStack)) {
-                    return true;
-                }
-            }
-            return false;
-        }).orElse(false);
-    }
-
-    private int getPlayerExp() {
-        return player.experienceLevel;
+        slotsChanged(upgradeContainer);
     }
 
     @Override
     public void slotsChanged(Container container) {
-        if (player.level().isClientSide || isProcessingSlotsChanged) return;
-
+        if (isProcessingSlotsChanged) {
+            super.slotsChanged(container);
+            return;
+        }
         isProcessingSlotsChanged = true;
+        try {
+            super.slotsChanged(container);
+            if (container == upgradeContainer && player instanceof ServerPlayer sp) {
+                ItemStack stack = upgradeContainer.getItem(0);
+                experience.set(sp.experienceLevel);
 
-        updateCosts();
+                int nutValue = PlayerUpgradeItems.getNutValue(stack);
+                int expValue = PlayerUpgradeItems.getExpValue(stack);
+                int skillPointValue = PlayerUpgradeItems.getSkillPointValue(stack);
+                if (!stack.isEmpty() && (nutValue > 0 || expValue > 0 || skillPointValue > 0)) {
+                    PlayerUpgradeData data = PlayerUpgradeData.get(sp);
+                    if (nutValue > 0) {
+                        data.addNuts(nutValue * stack.getCount());
+                        sp.displayClientMessage(Component.literal("提交了 " + (nutValue * stack.getCount()) + " 螺母")
+                                .withStyle(ChatFormatting.GOLD), true);
+                    } else if (expValue > 0) {
+                        data.addExp(expValue * stack.getCount());
+                        sp.displayClientMessage(Component.literal("提交了 " + (expValue * stack.getCount()) + " 点经验")
+                                .withStyle(ChatFormatting.AQUA), true);
+                    } else {
+                        data.addSkillPoints(skillPointValue * stack.getCount());
+                        sp.displayClientMessage(Component.literal("提交了 " + (skillPointValue * stack.getCount()) + " 技能点")
+                                .withStyle(ChatFormatting.GREEN), true);
+                    }
+                    upgradeContainer.setItem(0, ItemStack.EMPTY);
+                    PlayerUpgradeData.set(sp, data);
+                    PlayerUpgradeAttributes.apply(sp, data);
+                    PlayerUpgradeNetworkHandler.syncToClient(sp, data);
+                    expCost.set(0);
+                    breakthroughCost.set(0);
+                    return;
+                }
 
-        isProcessingSlotsChanged = false;
+                if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
+                    if (upgradeable.upgradeWithMaterials()) {
+                        expCost.set(0);
+                    } else {
+                        expCost.set(upgradeable.getUpgradeStats(stack)
+                                .map(s -> AwarenessUpgradeManager.getExpForLevel(s, s.level))
+                                .orElse(0));
+                    }
+                    List<ItemStack> materials = upgradeable.getBreakthroughMaterials(stack,
+                            upgradeable.getUpgradeStats(stack).map(s -> s.stage).orElse(1));
+                    breakthroughCost.set(materials.isEmpty() ? 0 : materials.get(0).getCount());
+                } else {
+                    expCost.set(0);
+                    breakthroughCost.set(0);
+                }
+            }
+        } finally {
+            isProcessingSlotsChanged = false;
+        }
+    }
 
-        super.slotsChanged(container);
+    public boolean hasEnoughUpgradeMaterials() {
+        ItemStack stack = upgradeContainer.getItem(0);
+        if (stack.isEmpty() || !(stack.getItem() instanceof IUpgradeableItem upgradeable)) {
+            return false;
+        }
+        List<ItemStack> required = upgradeable.getUpgradeMaterials(stack);
+        if (required.isEmpty()) return false;
+        for (ItemStack need : required) {
+            int count = 0;
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                ItemStack inv = player.getInventory().getItem(i);
+                if (!inv.isEmpty() && ItemStack.isSameItem(inv, need)) {
+                    count += inv.getCount();
+                }
+            }
+            if (count < need.getCount()) return false;
+        }
+        return true;
+    }
+
+    public boolean hasEnoughMaterials() {
+        ItemStack stack = upgradeContainer.getItem(0);
+        if (stack.isEmpty() || !(stack.getItem() instanceof IUpgradeableItem upgradeable)) {
+            return false;
+        }
+        var statsOpt = upgradeable.getUpgradeStats(stack);
+        if (statsOpt.isEmpty()) return false;
+        List<ItemStack> required = upgradeable.getBreakthroughMaterials(stack, statsOpt.get().stage);
+        if (required.isEmpty()) return false;
+        for (ItemStack need : required) {
+            int count = 0;
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                ItemStack inv = player.getInventory().getItem(i);
+                if (!inv.isEmpty() && ItemStack.isSameItem(inv, need)) {
+                    count += inv.getCount();
+                }
+            }
+            if (count < need.getCount()) return false;
+        }
+        return true;
+    }
+
+    private boolean hasEnoughItems(List<ItemStack> required) {
+        for (ItemStack need : required) {
+            int count = 0;
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                ItemStack inv = player.getInventory().getItem(i);
+                if (!inv.isEmpty() && ItemStack.isSameItem(inv, need)) {
+                    count += inv.getCount();
+                }
+            }
+            if (count < need.getCount()) return false;
+        }
+        return true;
+    }
+
+    public boolean hasEnoughAscensionMaterials() {
+        ItemStack stack = upgradeContainer.getItem(0);
+        if (stack.isEmpty() || !(stack.getItem() instanceof ISkillWeapon weapon)) {
+            return false;
+        }
+        List<ItemStack> required = weapon.getAscensionMaterials(stack);
+        return !required.isEmpty() && hasEnoughItems(required);
+    }
+
+    private void consumeMaterials(List<ItemStack> required) {
+        for (ItemStack need : required) {
+            int remaining = need.getCount();
+            for (int i = 0; i < player.getInventory().getContainerSize() && remaining > 0; i++) {
+                ItemStack inv = player.getInventory().getItem(i);
+                if (!inv.isEmpty() && ItemStack.isSameItem(inv, need)) {
+                    int take = Math.min(remaining, inv.getCount());
+                    inv.shrink(take);
+                    remaining -= take;
+                }
+            }
+        }
     }
 
     @Override
-    public boolean clickMenuButton(Player player, int button) {
-        if (button == 0) {
-            ItemStack materialStack = upgradeContainer.getItem(0);
-            if (!materialStack.isEmpty() && materialStack.getItem() instanceof IUpgradeableItem materialUpgradeable
-                    && materialUpgradeable.upgradeWithMaterials()) {
-                if (!materialUpgradeable.canUpgrade(materialStack)) {
-                    return false;
-                }
-                List<ItemStack> required = materialUpgradeable.getUpgradeMaterials(materialStack);
-                if (!hasEnoughMaterials(required)) {
-                    return false;
-                }
-                boolean success = materialUpgradeable.tryUpgrade(materialStack, player);
-                if (success) {
-                    consumeRequiredMaterials(required);
-                    upgradeContainer.setItem(0, materialStack.copy());
-                    updateCosts();
-                }
+    public boolean clickMenuButton(Player player, int id) {
+        if (!(player instanceof ServerPlayer sp)) return false;
+        ItemStack stack = upgradeContainer.getItem(0);
+
+        // 专属武器：进阶（id=2）与技能升级（id=100+技能索引）
+        if (!stack.isEmpty() && stack.getItem() instanceof ISkillWeapon weapon) {
+            if (id == 2) {
+                List<ItemStack> materials = weapon.getAscensionMaterials(stack);
+                if (materials.isEmpty() || !hasEnoughItems(materials)) return false;
+                consumeMaterials(materials);
+                weapon.ascend(stack);
+                sp.level().playSound(null, sp.blockPosition(), SoundEvents.PLAYER_LEVELUP,
+                        SoundSource.PLAYERS, 1.0f, 1.2f);
+                slotsChanged(upgradeContainer);
+                broadcastChanges();
                 return true;
             }
-
-            int cost = expCost.get();
-            int playerExp = getPlayerExp();
-
-            if (cost <= 0 || cost > playerExp) {
-                return false;
-            }
-
-            ItemStack stack = upgradeContainer.getItem(0);
-            if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
-                boolean success = upgradeable.tryUpgrade(stack, player);
-                if (success) {
-                    upgradeContainer.setItem(0, stack.copy());
-                    experience.set(getPlayerExp());
-                    updateCosts();
-                }
-            }
-            return true;
-        } else if (button == 1) {
-            int breakthroughCostVal = breakthroughCost.get();
-
-            if (breakthroughCostVal <= 0 || !hasEnoughMaterials()) {
-                return false;
-            }
-
-            ItemStack stack = upgradeContainer.getItem(0);
-            if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
-                List<ItemStack> required = upgradeable.getUpgradeStats(stack)
-                        .map(stats -> upgradeable.getBreakthroughMaterials(stack, stats.stage))
-                        .orElse(List.of());
-                List<ItemStack> materials = collectMaterials();
-                boolean success = upgradeable.tryBreakthrough(stack, player, materials);
-                if (success) {
-                    upgradeContainer.setItem(0, stack.copy());
-                    consumeRequiredMaterials(required);
-                    updateCosts();
-                }
-            }
-            return true;
-        }
-        return super.clickMenuButton(player, button);
-    }
-
-    private int recalculateExpCost() {
-        ItemStack stack = upgradeContainer.getItem(0);
-        if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
-            var opt = upgradeable.getUpgradeStats(stack);
-            if (opt.isPresent()) {
-                var stats = opt.get();
-                if (AwarenessUpgradeManager.canUpgrade(stats)) {
-                    return AwarenessUpgradeManager.getExpForLevel(stats, stats.level);
-                }
+            if (id >= 100 && id < 100 + ISkillWeapon.SKILL_COUNT) {
+                int skillIndex = id - 100;
+                if (!weapon.skillUpgradable(skillIndex)) return false;
+                int lv = weapon.getSkillLevel(stack, skillIndex);
+                if (lv >= ISkillWeapon.MAX_SKILL_LEVEL) return false;
+                PlayerUpgradeData data = PlayerUpgradeData.get(sp);
+                if (!data.tryConsumeSkillPoint(1)) return false;
+                weapon.setSkillLevel(stack, skillIndex, lv + 1);
+                PlayerUpgradeData.set(sp, data);
+                PlayerUpgradeAttributes.apply(sp, data);
+                PlayerUpgradeNetworkHandler.syncToClient(sp, data);
+                sp.level().playSound(null, sp.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP,
+                        SoundSource.PLAYERS, 1.0f, 1.5f);
+                slotsChanged(upgradeContainer);
+                broadcastChanges();
+                return true;
             }
         }
-        return 0;
-    }
 
-    private int recalculateBreakthroughCost() {
-        ItemStack stack = upgradeContainer.getItem(0);
-        if (!stack.isEmpty() && stack.getItem() instanceof IUpgradeableItem upgradeable) {
-            var opt = upgradeable.getUpgradeStats(stack);
-            if (opt.isPresent()) {
-                var stats = opt.get();
-                if (AwarenessUpgradeManager.canBreakthrough(stats)) {
-                    return 1;
-                }
-            }
+        if (stack.isEmpty() || !(stack.getItem() instanceof IUpgradeableItem upgradeable)) {
+            return false;
         }
-        return 0;
-    }
 
-    private List<ItemStack> collectMaterials() {
-        List<ItemStack> materials = new ArrayList<>();
-        for (int i = 0; i < materialsContainer.getContainerSize(); i++) {
-            ItemStack stack = materialsContainer.getItem(i);
-            if (!stack.isEmpty()) {
-                materials.add(stack.copy());
+        if (id == 0) {
+            if (upgradeable.upgradeWithMaterials()) {
+                List<ItemStack> required = upgradeable.getUpgradeMaterials(stack);
+                if (required.isEmpty() || !hasEnoughUpgradeMaterials()) return false;
+                if (!upgradeable.canUpgrade(stack)) return false;
+                consumeMaterials(required);
+            } else {
+                if (!upgradeable.canUpgrade(stack)) return false;
             }
-        }
-        return materials;
-    }
-
-    private void consumeRequiredMaterials(List<ItemStack> required) {
-        for (ItemStack requiredStack : required) {
-            int needed = requiredStack.getCount();
-            for (int i = 0; i < materialsContainer.getContainerSize() && needed > 0; i++) {
-                ItemStack material = materialsContainer.getItem(i);
-                if (ItemStack.isSameItemSameComponents(material, requiredStack)) {
-                    int take = Math.min(needed, material.getCount());
-                    material.shrink(take);
-                    needed -= take;
-                    if (material.isEmpty()) {
-                        materialsContainer.setItem(i, ItemStack.EMPTY);
-                    }
-                }
+            boolean success = upgradeable.tryUpgrade(stack, sp);
+            if (success) {
+                slotsChanged(upgradeContainer);
+                broadcastChanges();
             }
+            return success;
+        } else if (id == 1) {
+            if (!upgradeable.canBreakthrough(stack)) return false;
+            var statsOpt = upgradeable.getUpgradeStats(stack);
+            if (statsOpt.isEmpty()) return false;
+            List<ItemStack> materials = upgradeable.getBreakthroughMaterials(stack, statsOpt.get().stage);
+            if (materials.isEmpty()) return false;
+            if (!hasEnoughMaterials()) return false;
+            consumeMaterials(materials);
+            boolean success = upgradeable.tryBreakthrough(stack, sp, materials);
+            if (success) {
+                slotsChanged(upgradeContainer);
+                broadcastChanges();
+            }
+            return success;
         }
+        return false;
     }
 
     @Override
@@ -276,28 +322,17 @@ public class UpgradeMenu extends AbstractContainerMenu {
         Slot slot = slots.get(index);
         if (!slot.hasItem()) return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
-        ItemStack copy = stack.copy();
 
         if (index == 0) {
-            if (!moveItemStackTo(stack, 10, 46, true)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (index >= 1 && index < 10) {
-            if (!moveItemStackTo(stack, 10, 46, true)) {
+            if (!moveItemStackTo(stack, 1, slots.size(), true)) {
                 return ItemStack.EMPTY;
             }
         } else {
-            if (stack.getItem() instanceof IUpgradeableItem && !moveItemStackTo(stack, 0, 1, false)) {
-                return ItemStack.EMPTY;
-            }
-            if (isValidBreakthroughMaterial(stack) && !moveItemStackTo(stack, 1, 10, false)) {
-                return ItemStack.EMPTY;
-            }
-            if (index < 38) {
-                if (!moveItemStackTo(stack, 38, 46, false)) {
+            if (stack.getItem() instanceof IUpgradeableItem || PlayerUpgradeItems.isSubmittable(stack)) {
+                if (!moveItemStackTo(stack, 0, 1, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!moveItemStackTo(stack, 10, 38, false)) {
+            } else {
                 return ItemStack.EMPTY;
             }
         }
@@ -307,34 +342,7 @@ public class UpgradeMenu extends AbstractContainerMenu {
         } else {
             slot.setChanged();
         }
-        return copy;
-    }
-
-    @Override
-    public void removed(Player player) {
-        super.removed(player);
-        if (!player.level().isClientSide) {
-            for (int i = 0; i < upgradeContainer.getContainerSize(); i++) {
-                ItemStack stack = upgradeContainer.getItem(i);
-                if (!stack.isEmpty()) {
-                    returnToInventoryOrDrop(player, stack);
-                    upgradeContainer.setItem(i, ItemStack.EMPTY);
-                }
-            }
-            for (int i = 0; i < materialsContainer.getContainerSize(); i++) {
-                ItemStack stack = materialsContainer.getItem(i);
-                if (!stack.isEmpty()) {
-                    returnToInventoryOrDrop(player, stack);
-                    materialsContainer.setItem(i, ItemStack.EMPTY);
-                }
-            }
-        }
-    }
-
-    private static void returnToInventoryOrDrop(Player player, ItemStack stack) {
-        if (!player.getInventory().add(stack)) {
-            player.drop(stack, false);
-        }
+        return stack;
     }
 
     @Override
@@ -342,41 +350,15 @@ public class UpgradeMenu extends AbstractContainerMenu {
         return true;
     }
 
-    public boolean hasEnoughMaterials() {
-        ItemStack stack = upgradeContainer.getItem(0);
-        if (stack.isEmpty() || !(stack.getItem() instanceof IUpgradeableItem upgradeable)) {
-            return false;
-        }
-        return upgradeable.getUpgradeStats(stack).map(stats -> {
-            List<ItemStack> required = upgradeable.getBreakthroughMaterials(stack, stats.stage);
-            return hasEnoughMaterials(required);
-        }).orElse(false);
-    }
-
-    public boolean hasEnoughUpgradeMaterials() {
-        ItemStack stack = upgradeContainer.getItem(0);
-        if (stack.isEmpty() || !(stack.getItem() instanceof IUpgradeableItem upgradeable)) {
-            return false;
-        }
-        return hasEnoughMaterials(upgradeable.getUpgradeMaterials(stack));
-    }
-
-    public boolean hasEnoughMaterials(List<ItemStack> required) {
-        if (required.isEmpty()) {
-            return false;
-        }
-        for (ItemStack requiredStack : required) {
-            int found = 0;
-            for (int i = 0; i < materialsContainer.getContainerSize(); i++) {
-                ItemStack material = materialsContainer.getItem(i);
-                if (ItemStack.isSameItemSameComponents(material, requiredStack)) {
-                    found += material.getCount();
-                }
-            }
-            if (found < requiredStack.getCount()) {
-                return false;
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        if (!player.level().isClientSide) {
+            ItemStack stack = upgradeContainer.getItem(0);
+            if (!stack.isEmpty()) {
+                player.getInventory().placeItemBackInInventory(stack);
+                upgradeContainer.setItem(0, ItemStack.EMPTY);
             }
         }
-        return true;
     }
 }
