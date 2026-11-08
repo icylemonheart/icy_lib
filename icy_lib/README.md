@@ -1,39 +1,187 @@
-# Icy Lib
+# Icy Lib（冰前置库）
 
-A core library mod for Minecraft NeoForge 1.21.1 providing utilities and attributes for icy series mods.
+> 为 icy 系列模组提供属性、伤害类型、防御结算、成长、品质与富文本界面的前置基础库。
 
-## Features
+## 模组简介
 
-- **Custom Damage Types**: Physical, Ice, Fire, Light, Shadow, Magic, Poison, Punishing, and Void damage types
-- **Attributes System**: Critical strike, defense, critical strike defense and resistance attributes
-- **Quality System**: Rank-based item slot background and tooltip rendering with per-rank gradient colors
-- **Fancy Text Tooltips**: Rich text tooltip effects, including custom backgrounds and fonts
-- **Defense System**: Layered defense framework where shields (SHIELD) are drained before armor (ARMOR), with extensible layer priorities and bypass hooks
-- **Shield / Armor System**: Shield and armor management with HUD display
-- **Dodge System**: Generic perfect-dodge window API — cancels incoming living-attacker damage during the window and fires a callback
-- **Player Upgrade System**: Level, EXP, nuts and promotion stages (Private → Hero) with per-stage attribute values, plus skill points
-- **Network Layer**: Serverbound/clientbound payloads for player upgrade actions and client-side upgrade cache sync
-- **Effects**: Various effects including Rage, Scorching, Electrocution, Piercing, Corrosion, Fortitude, Hyper Calculation Space, and Catherine Shield
-- **Upgrade System**: Framework for item upgrading and breakthrough
-- **Menu System**: Upgrade and recycle menus, shared GUI widgets and style presets
-- **Migration Protection API**: Keeps downstream `ADD_MULTIPLIED_TOTAL` modifiers in the independent multiply zone
+**Icy Lib** 是一个面向 Minecraft 1.21.1 / NeoForge（主要） 的基础库模组，本身不添加任何可获取的物品、方块或生物，单独安装不会改变游戏内容。它的作用是把「日式 RPG 数值体系」所需的一整套底层能力做出来，供 *Icy Punishing* 等后续模组直接调用：
 
-## Requirements
+- 一整套自定义属性与伤害类型（物理、冰、火、光、暗影、魔法、毒素、虚空、惩罚）；
+- **防御结算管线**（护盾 → 护甲 → 抗性 → 防御），支持顺序/同时两种模式；
+- 玩家等级、晋升、词条、意识强化的成长框架；
+- 物品品质（2~6 星）与配套的描边、底色、tooltip 配色；
+- 名为 **FancyText** 的富文本艺术字系统；
+- HUD 与升级/回收界面组件。
 
-- Minecraft NeoForge 1.21.1 (21.1.235)
-- Java 21
+如果你只想玩内容，安装 *Icy Punishing 等模组*时会自动需要它；如果你是整合包作者或模组开发者，可以把它当作通用前置，在自己的模组里复用这些系统。
 
-## Building
+***
 
-```bash
-./gradlew build
-```
+## 基本信息
 
-## Installation
+| 项目        | 内容                |
+| --------- | ----------------- |
+| 模组名称      | Icy Lib           |
+| 模组 ID     | `icy_lib`         |
+| 当前版本      | 1.1.2             |
+| Minecraft | 1.21.1            |
+| 加载器       | NeoForge 21.1.235 |
+| 作者        | icylemonheart     |
+| 许可证       | MIT               |
+| 前置模组      | 无                 |
+| 安装位置      | 客户端与服务端均需安装       |
+| 类型        | 前置库 / 核心库         |
 
-1. Build the mod using `./gradlew build`
-2. Copy `build/libs/icy_lib-1.1.2.jar` to your NeoForge mod folder
-3. Launch Minecraft with NeoForge
+***
+
+## 内容与功能
+
+### 一、属性体系
+
+共 15 项可同步属性，覆盖会心、防御与元素抗性三条线：
+
+| 分类   | 属性                         |
+| ---- | -------------------------- |
+| 会心   | 会心率、会心伤害（加算）、会心伤害（乘算）、会心防御 |
+| 防御   | 防御力、物理抗性、元素抗性、通用抗性         |
+| 元素抗性 | 冰、火、光、暗影、魔法、毒素、虚空          |
+
+属性会随玩家等级自动成长（使用升级系统时），也可以被装备、意识、药水效果临时改写。
+
+### 二、伤害类型
+
+模组注册了 9 种独立伤害类型，便于其他模组做「属性克制 / 抗性区分」：
+
+`icy_physical`（物理）、`icy_ice`（冰）、`icy_fire`（火）、`icy_light`（光）、`icy_shadow`（暗影）、`icy_magic`（魔法）、`icy_poison`（毒素）、`icy_void`（虚空）、`icy_punishing`（惩罚）。
+
+- 所有类型共用一套判定工具，可以按伤害类型快速归类；
+- 内置「穿透」标签：可绕过护盾、抗性、附魔、护甲或效果；
+- 惩罚伤害（`icy_punishing`）默认无视全部防御层。
+
+### 三、防御结算
+
+受到伤害时按以下顺序处理：
+
+1. **护盾层**优先吸收；
+2. **护甲层**吸收剩余伤害；
+3. 按物理 / 元素 / 通用抗性做除法减免；
+4. 减去防御力，最低为 0；
+5. 结果为 0 时可按配置取消受击（不掉血、不触发受击动画）。
+
+特点：
+
+- 防御层可扩展，其他模组可以注册自己的层并指定优先级；
+- 支持「顺序结算」与「同时结算」两种模式；
+- 结算前后会发出事件，方便外部模组修改剩余伤害；
+- 怪物默认获得「最大生命 × 10%」的防御与「护甲值 × 10%」的会心防御，倍率可配置。
+
+### 四、状态效果（8 种）
+
+| 效果                        | 名称    | 作用                       |
+| ------------------------- | ----- | ------------------------ |
+| `fortitude`               | 霸体    | 免疫击退，每秒清除负面效果            |
+| `hyper_calculation_space` | 超算空间  | 使周围敌人进入减速状态              |
+| `rage`                    | 暴怒    | 普通攻击额外伤害 +20%            |
+| `scorching`               | 灼烧    | 火焰抗性 -15%                |
+| `electrocution`           | 感电    | 雷属性抗性 -15%               |
+| `catherine_shield`        | 凯瑟琳护盾 | 获得 1000 点护盾，并提升 15% 物理伤害 |
+| `piercing`                | 刺伤    | 物理抗性 -7%                 |
+| `corrosion`               | 侵蚀    | 暗属性抗性 -15%               |
+
+### 五、成长系统
+
+- **等级**：最高 80 级，累计经验 500,000，每级提升生命、攻击、防御、会心。
+- **晋升**：14 个军衔阶段（列兵 → 军士 → 精锐 → 特种 → 王牌 → 英雄），消耗螺母并解锁属性奖励。
+- **词条升级**：按属性类型逐级强化，界面中直接消耗材料。
+- **意识强化**：为「意识」类装备提供独立的等级/经验/属性成长数据。
+- **货币与材料**：螺母、经验仓、属性强化道具等由内容模组注册，库本体只提供框架。
+
+### 六、品质系统
+
+物品可登记 2~6 星品质，对应颜色：
+
+| 星级 | 颜色 |
+| -- | -- |
+| 2★ | 绿色 |
+| 3★ | 蓝色 |
+| 4★ | 紫色 |
+| 5★ | 橙色 |
+| 6★ | 红色 |
+
+品质会影响物品描边、槽位底色与 tooltip 文字配色。
+
+### 七、FancyText 富文本
+
+这是本库最有辨识度的功能：可以在物品描述、tooltip、界面文字中直接写带动态效果的彩色文字。
+
+- 语法：`{{样式ID}}文字内容{{/}}`
+- 内置 56 种预置样式，例如条带扫描、冰晶微光、超算空间、星光流动等；
+- 支持波浪、脉冲、彩虹、闪烁、透明度呼吸等动画；
+- tooltip 背景支持纯色、图片等模式；
+- 通过 Mixin 接管原版字体绘制，无需改动其他模组的文本。
+
+### 八、界面与 HUD
+
+- 护甲条 HUD、护盾条 HUD；
+- 超算空间全屏覆盖层（进入减速状态时的视觉反馈）；
+- 按钮与面板样式，供内容模组复用；
+- 升级界面与回收界面，界面渲染器可插拔；
+- tooltip 左侧立绘支持（`已知不兼容：会被其它tooltip类模组覆盖`）。
+
+***
+
+## 配置文件
+
+配置文件位于 `config/icy/` 下，主要选项：
+
+| 配置项              | 默认值 | 说明                 |
+| ---------------- | --- | ------------------ |
+| 无伤害时取消受击动画       | 关闭  | 伤害被完全抵消时不再播放受击动画   |
+| 怪物防御倍率           | 0.1 | 怪物防御 = 最大生命 × 该值   |
+| 怪物会心防御倍率         | 0.1 | 怪物会心防御 = 最大生命 × 该值 |
+| setHealth 穿透伤害处理 | 关闭  | 处理直接设置生命的伤害是否穿透防御  |
+| 玩家移动速度上限         | 0.5 | 防止速度属性被无限叠加        |
+
+***
+
+## 面向开发者
+
+Icy Lib 提供以下可复用的扩展点：
+
+- **注册属性 / 伤害类型**：直接调用初始化入口注册，参与统一的伤害判定。
+- **注册防御层**：实现防御层接口并指定优先级，即可插入护盾/护甲之外的第三层（如「结界」「能量罩」）。
+- **注册品质**：`ItemQualityRegistry.register(item, rank)`
+- **注册富文本样式**：向样式注册表加入自定义 `TextEffect` 或整段预设。
+- **注册成长材料**：把物品登记为螺母包、经验仓或技能点，自动接入升级界面。
+
+> 具体 API 名称与调用方式请参考源码中的 `com.icylib` 包，各子系统均以独立包组织。
+
+***
+
+## 安装说明
+
+1. 安装 Minecraft 1.21.1 对应的 NeoForge（21.1.235 或兼容版本）；
+2. 将 `icy_lib` 放入 `mods` 文件夹；
+3. 客户端与服务端都要安装；
+4. 如需完整体验，请搭配 *Icy Punishing等附属模组*。
+
+***
+
+## 常见问题
+
+**Q：单独安装 Icy Lib 有什么内容？**
+A：没有可获取的物品或方块，它只是前置库。单独安装仅在创造模式搜索栏看不到任何新增内容，属于正常现象。
+
+**Q：为什么进入世界后怪物变「肉」了？**
+A：怪物默认获得基于最大生命的防御，可在配置中把「怪物防御倍率 / 会心防御倍率」调低或设为 0。
+
+**Q：会和其它护甲/减伤模组冲突吗？**
+A：防御在受击事件前段结算，通常可以共存；若出现伤害被重复减免，建议先关闭「无伤害时取消受击动画」并检查其它模组的减伤顺序。
+
+**Q：文字出现彩色/闪烁效果是什么？**
+A：这是 FancyText 富文本效果，属于本库的正常表现，但目前只有一个模组使用了。
+
+***
 
 ## License
 
